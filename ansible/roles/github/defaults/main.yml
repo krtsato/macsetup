@@ -1,0 +1,4 @@
+github_setup_ssh: true
+github_ssh_key_type: ed25519
+github_ssh_email: ""
+github_ssh_key_path: "{{ lookup('env', 'HOME') }}/.ssh/id_{{ github_ssh_key_type }}_github"

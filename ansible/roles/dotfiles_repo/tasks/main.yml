@@ -1,0 +1,13 @@
+- name: Ensure dotfiles repository is present
+  ansible.builtin.shell: |
+    if [ -d ~/dev/me/dotfiles/.git ]; then
+      git -C ~/dev/me/dotfiles pull --ff-only
+    else
+      mkdir -p ~/dev/me
+      git clone https://github.com/krtsato/dotfiles.git ~/dev/me/dotfiles
+    fi
+  environment:
+    PATH: /opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin
+  register: dotfiles_repo
+  changed_when: "'Cloning into' in (dotfiles_repo.stdout + dotfiles_repo.stderr) or 'Updating' in (dotfiles_repo.stdout + dotfiles_repo.stderr) or 'Fast-forward' in (dotfiles_repo.stdout + dotfiles_repo.stderr)"
+  failed_when: dotfiles_repo.rc != 0

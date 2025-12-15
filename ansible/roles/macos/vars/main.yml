@@ -1,0 +1,25 @@
+defaults_settings:
+  # Accessibility Display
+  - { domain: com.apple.universalaccess, key: reduceMotion, type: int, value: 1 }
+  - { domain: com.apple.universalaccess, key: reduceTransparency, type: int, value: 1 }
+  - { domain: com.apple.universalaccess, key: mouseDriverCursorSize, type: float, value: 2.0 }
+  # Keyboard
+  - { domain: NSGlobalDomain, key: NSAutomaticCapitalizationEnabled, type: bool, value: false }
+  - { domain: NSGlobalDomain, key: NSAutomaticQuoteSubstitutionEnabled, type: bool, value: false }
+  # Trackpad
+  - { domain: NSGlobalDomain, key: com.apple.trackpad.scaling, type: int, value: 3 }
+  # Dock
+  - { domain: com.apple.dock, key: tilesize, type: int, value: 41 }
+  - { domain: com.apple.dock, key: orientation, type: string, value: left }
+  - { domain: com.apple.dock, key: mineffect, type: string, value: scale }
+  - { domain: com.apple.dock, key: minimize-to-application, type: bool, value: true }
+  - { domain: com.apple.dock, key: autohide, type: bool, value: true }
+  - { domain: com.apple.dock, key: show-recents, type: bool, value: false }
+  # Finder
+  - { domain: com.apple.finder, key: AppleShowAllFiles, type: bool, value: true }
+  - { domain: NSGlobalDomain, key: AppleShowAllExtensions, type: bool, value: true }
+  - { domain: com.apple.desktopservices, key: DSDontWriteNetworkStores, type: bool, value: true }
+  # Menu Bar
+  - { domain: com.apple.menuextra.battery, key: ShowPercent, type: string, value: "YES" }
+  - { domain: com.apple.controlcenter, key: "NSStatusItem Visible Bluetooth", type: bool, value: true }
+  - { domain: com.apple.controlcenter, key: "NSStatusItem Visible Sound", type: bool, value: true }

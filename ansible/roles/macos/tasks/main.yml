@@ -1,0 +1,18 @@
+- name: Apply macOS defaults
+  community.general.osx_defaults:
+    domain: "{{ item.domain }}"
+    key: "{{ item.key }}"
+    type: "{{ item.type }}"
+    value: "{{ item.value }}"
+  loop: "{{ defaults_settings }}"
+
+- name: Restart Dock to apply changes
+  ansible.builtin.shell: killall Dock || true
+
+- name: Restart Finder to apply changes
+  ansible.builtin.shell: killall Finder || true
+
+- name: Restart Control Center to apply changes
+  ansible.builtin.shell: |
+    killall ControlCenter || true
+    killall SystemUIServer || true

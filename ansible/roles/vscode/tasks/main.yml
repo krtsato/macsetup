@@ -1,0 +1,9 @@
+- name: Install VSCode extensions via script
+  ansible.builtin.shell: ./scripts/install-vscode-extensions.sh
+  args:
+    chdir: ~/dev/me/macsetup
+  environment:
+    PATH: /opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin
+  register: vscode_result
+  changed_when: "'Installing' in vscode_result.stdout or 'Installing' in vscode_result.stderr"
+  failed_when: false

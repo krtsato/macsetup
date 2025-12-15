@@ -1,0 +1,33 @@
+- name: Ensure GitHub CLI is installed
+  ansible.builtin.shell: gh --version
+  environment:
+    PATH: /opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin
+  register: gh_cli
+  changed_when: false
+  failed_when: gh_cli.rc != 0
+
+- name: Check GitHub authentication status
+  ansible.builtin.shell: gh auth status
+  environment:
+    PATH: /opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin
+  register: gh_auth
+  changed_when: false
+  failed_when: false
+
+- name: Abort if GitHub CLI is not logged in
+  ansible.builtin.fail:
+    msg: "gh auth login を完了してから再実行してください。（ブラウザ認証が必要です）"
+  when: gh_auth.rc != 0
+
+- name: Create and register GitHub SSH key via script
+  ansible.builtin.shell: >
+    ./scripts/setup-github-ssh.sh
+    {{ '-t ' ~ github_ssh_key_type if github_ssh_key_type != 'ed25519' else '' }}
+    {{ github_ssh_email if github_ssh_email else '' }}
+  args:
+    chdir: /Users/s11639/dev/me/macsetup
+    creates: "{{ github_ssh_key_path }}"
+  environment:
+    PATH: /opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin
+  register: github_ssh_result
+  when: github_setup_ssh | bool

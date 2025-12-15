@@ -1,0 +1,9 @@
+- name: Install mise tools via script
+  ansible.builtin.shell: ./scripts/install-mise-tools.sh
+  args:
+    chdir: ~/dev/me/macsetup
+  environment:
+    PATH: /opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin
+  register: mise_result
+  changed_when: "'install' in mise_result.stdout or 'install' in mise_result.stderr"
+  failed_when: mise_result.rc != 0

@@ -1,0 +1,12 @@
+- hosts: default
+  connection: local
+  gather_facts: false
+  roles:
+    - dotfiles_repo
+    - homebrew
+    - macos
+    - dotfiles
+    - github
+    - mise
+    - go
+    - vscode

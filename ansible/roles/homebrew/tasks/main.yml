@@ -1,0 +1,18 @@
+- name: Install Homebrew packages from Brewfile
+  ansible.builtin.shell: |
+    cd ~/dev/me/macsetup
+    brew bundle --file ~/dev/me/dotfiles/brewfile.me
+  environment:
+    PATH: /opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin
+  register: brew_bundle
+  changed_when: 'Installing' in (brew_bundle.stdout + brew_bundle.stderr)
+  failed_when: brew_bundle.rc != 0
+
+- name: Dump installed Homebrew packages to dotfiles Brewfile
+  ansible.builtin.shell: |
+    brew bundle dump --file ~/dev/me/dotfiles/brewfile.me --force
+  environment:
+    PATH: /opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin
+  register: brew_dump
+  changed_when: "'Writing' in (brew_dump.stdout + brew_dump.stderr)"
+  failed_when: brew_dump.rc != 0

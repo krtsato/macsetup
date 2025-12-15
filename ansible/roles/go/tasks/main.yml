@@ -1,0 +1,8 @@
+- name: Install Go tools
+  ansible.builtin.shell: |
+    export PATH="$HOME/.local/share/mise/shims:/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin"
+    go install {{ item }}
+  loop: "{{ go_install_targets }}"
+  register: go_install
+  changed_when: go_install.rc == 0
+  failed_when: go_install.rc != 0
