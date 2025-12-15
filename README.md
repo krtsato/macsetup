@@ -2,7 +2,7 @@
 
 `.github/instructions/auto-setup/auto-setup.md` の内容を Ansible + シェル + Makefile で自動化するためのリポジトリです。GUI 設定など手作業が必要な箇所はそのまま残しています。
 
-## 手動でやること（先に準備）
+## 準備
 
 | 内容 | コマンド/場所 | 備考 |
 | --- | --- | --- |
@@ -11,7 +11,7 @@
 | 秘匿ファイル配置 | `~/.aws`, `~/.ssh`, `~/.claude.json` など | `auto-setup.md` の表を参照 |
 | GitHub CLI ログイン | `gh auth login && gh auth status` | ブラウザ認証のみ、自動化なし |
 
-## よく使う Make タスク
+## Make タスク
 
 | ターゲット | 目的 | 例 |
 | --- | --- | --- |
@@ -20,7 +20,7 @@
 | `make github-ssh` | GitHub SSH 鍵作成・登録スクリプト実行 | `make github-ssh SSH_KEY_TYPE=ecdsa GITHUB_EMAIL=you@example.com` |
 | `make help` | 簡易ヘルプ表示 | |
 
-### 主要な変数
+主要な変数
 
 | 変数 | 用途 | デフォルト/例 |
 | --- | --- | --- |
@@ -41,7 +41,7 @@
 | 7 | `go` | Go ツールを `go install`（mise shims を PATH に含めて実行） |
 | 8 | `vscode` | `./scripts/install-vscode-extensions.sh` |
 
-## 手動で残す作業
+## 手動作業
 
 | 項目 | 内容 |
 | --- | --- |
