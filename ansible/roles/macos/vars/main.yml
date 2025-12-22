@@ -6,6 +6,22 @@ defaults_settings:
   # Keyboard
   - { domain: NSGlobalDomain, key: NSAutomaticCapitalizationEnabled, type: bool, value: false }
   - { domain: NSGlobalDomain, key: NSAutomaticQuoteSubstitutionEnabled, type: bool, value: false }
+  # Input Sources (Google Japanese Input)
+  - domain: com.apple.HIToolbox
+    key: AppleEnabledInputSources
+    type: array
+    value:
+      - { InputSourceKind: "Keyboard Layout", "KeyboardLayout ID": 0, "KeyboardLayout Name": "U.S." }
+      - { InputSourceKind: "Input Mode", "Bundle ID": "com.google.inputmethod.Japanese", "Input Mode": "com.google.inputmethod.Japanese" }
+      - { InputSourceKind: "Input Mode", "Bundle ID": "com.google.inputmethod.Japanese", "Input Mode": "com.google.inputmethod.Japanese.Roman" }
+  - domain: com.apple.HIToolbox
+    key: AppleSelectedInputSources
+    type: array
+    value:
+      - { InputSourceKind: "Input Mode", "Bundle ID": "com.google.inputmethod.Japanese", "Input Mode": "com.google.inputmethod.Japanese.Roman" }
+  # Keyboard backlight (system-wide)
+  - { domain: /Library/Preferences/com.apple.iokit.AmbientLightSensor, key: AutomaticKeyboardEnabled, type: bool, value: false, become: true }
+  - { domain: /Library/Preferences/com.apple.iokit.AmbientLightSensor, key: KeyboardBacklightLevel, type: float, value: 0.0, become: true }
   # Trackpad
   - { domain: NSGlobalDomain, key: com.apple.trackpad.scaling, type: int, value: 3 }
   # Dock
@@ -23,3 +39,6 @@ defaults_settings:
   - { domain: com.apple.menuextra.battery, key: ShowPercent, type: string, value: "YES" }
   - { domain: com.apple.controlcenter, key: "NSStatusItem Visible Bluetooth", type: bool, value: true }
   - { domain: com.apple.controlcenter, key: "NSStatusItem Visible Sound", type: bool, value: true }
+
+nvram_settings:
+  - { key: StartupMute, value: "%01" }

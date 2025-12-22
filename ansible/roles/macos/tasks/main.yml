@@ -1,4 +1,5 @@
 - name: Apply macOS defaults
+  become: "{{ item.become | default(false) }}"
   community.general.osx_defaults:
     domain: "{{ item.domain }}"
     key: "{{ item.key }}"
@@ -16,3 +17,18 @@
   ansible.builtin.shell: |
     killall ControlCenter || true
     killall SystemUIServer || true
+
+- name: Read NVRAM values
+  become: true
+  ansible.builtin.command: nvram -p
+  register: nvram_dump
+  changed_when: false
+  when: nvram_settings | length > 0
+
+- name: Ensure NVRAM settings
+  become: true
+  ansible.builtin.command: "nvram {{ item.key }}={{ item.value }}"
+  loop: "{{ nvram_settings }}"
+  when:
+    - nvram_settings | length > 0
+    - (item.key ~ '\t' ~ item.value) not in nvram_dump.stdout
