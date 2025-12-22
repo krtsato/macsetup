@@ -16,7 +16,7 @@
 | ターゲット | 目的 | 例 |
 | --- | --- | --- |
 | `make bootstrap` | Homebrew と Ansible を導入 | 初回のみ |
-| `make playbook` | `ansible/exec.yml` を localhost に実行 | `make playbook EXTRA_VARS="github_ssh_key_type=ecdsa"` |
+| `make playbook` | `ansible/exec.yaml` を localhost に実行 | `make playbook EXTRA_VARS="github_ssh_key_type=ecdsa"` |
 | `make github-ssh` | GitHub SSH 鍵作成・登録スクリプト実行 | `make github-ssh SSH_KEY_TYPE=ecdsa GITHUB_EMAIL=you@example.com` |
 | `make help` | 簡易ヘルプ表示 | |
 

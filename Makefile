@@ -1,7 +1,7 @@
 ANSIBLE_PLAYBOOK ?= ansible-playbook
 ANSIBLE_FLAGS ?=
 INVENTORY ?= ansible/hosts
-PLAYBOOK ?= ansible/exec.yml
+PLAYBOOK ?= ansible/exec.yaml
 EXTRA_VARS ?=
 
 SSH_KEY_TYPE ?= ed25519
