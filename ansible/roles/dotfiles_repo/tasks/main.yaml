@@ -1,3 +1,13 @@
+- name: Ensure base directories exist
+  ansible.builtin.file:
+    path: "{{ item }}"
+    state: directory
+    mode: "0755"
+  loop:
+    - "{{ lookup('env', 'HOME') }}/go/src/github.com"
+    - "{{ lookup('env', 'HOME') }}/dev/job"
+    - "{{ lookup('env', 'HOME') }}/dev/me"
+
 - name: Ensure dotfiles repository is present
   ansible.builtin.shell: |
     if [ -d ~/dev/me/dotfiles/.git ]; then
