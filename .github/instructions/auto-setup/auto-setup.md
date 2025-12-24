@@ -2,27 +2,19 @@
 
 ## Install Homebrew and Ansible
 
-開発用ディレクトリを作成する。
-
-```sh
-mkdir -p ~/go/src/github.com # 仕事用
-mkdir -p ~/dev/job # 仕事用
-mkdir -p ~/dev/me  # 個人用
-```
-
-リポジトリをクローンする。
-
-```sh
-git clone https://github.com/krtsato/dotfiles.git ~/dev/me/dotfiles
-git clone https://github.com/krtsato/macsetup.git ~/dev/me/macsetup
-```
-
-Homebrew と Ansible をインストールする。
-
-```sh
-cd ~/dev/me/macsetup
-./scripts/install-brew-ansible.sh
-```
+1. Xcode Command Line Tools をインストールする。
+   ```sh
+   xcode-select --install
+   ```
+2. リポジトリをクローンする。
+   ```sh
+   git clone https://github.com/krtsato/macsetup.git ~/dev/me/macsetup
+   ```
+3. Homebrew と Ansible をインストールする。
+   ```sh
+   cd ~/dev/me/macsetup
+   ./scripts/install-clt-brew-ansible.sh
+   ```
 
 ## Install by Homebrew
 

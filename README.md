@@ -6,9 +6,10 @@
 
 | 手順 | 内容 | コマンド/補足 |
 | --- | --- | --- |
-| 1 | macsetup リポジトリを clone | `git clone https://github.com/krtsato/macsetup.git ~/dev/me/macsetup` |
-| 2 | 秘匿ファイルを配置 | `~/.aws`, `~/.ssh`, `~/.claude.json` など（`auto-setup.md` の表を参照） |
-| 3 | ワンコマンド実行 | `make setup`（CLT 未導入なら `./scripts/install-clt-brew-ansible.sh` が案内） |
+| 1 | Xcode Command Line Tools をインストール | `xcode-select --install` |
+| 2 | macsetup リポジトリを clone | `git clone https://github.com/krtsato/macsetup.git ~/dev/me/macsetup` |
+| 3 | 秘匿ファイルを配置 | `~/.aws`, `~/.ssh`, `~/.claude.json` など（`auto-setup.md` の表を参照） |
+| 4 | ワンコマンド実行 | `make setup` |
 
 ## Make タスク
 

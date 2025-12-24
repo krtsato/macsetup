@@ -5,15 +5,6 @@ log() { printf "==> %s\n" "$*"; }
 
 log "Ansible インストールを開始します"
 
-# Xcode Command Line Tools の確認
-if ! xcode-select -p >/dev/null 2>&1; then
-  log "Xcode Command Line Tools が見つかりません。インストーラを起動します..."
-  xcode-select --install || true
-  log "インストールが完了したら、このスクリプトを再実行してください。"
-  exit 1
-fi
-log "✓ Xcode Command Line Tools が見つかりました"
-
 # Homebrew のインストール確認
 if ! command -v brew &> /dev/null; then
   log "Homebrew をインストール中..."
