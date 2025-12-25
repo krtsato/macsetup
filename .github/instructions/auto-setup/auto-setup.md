@@ -15,6 +15,12 @@
    cd ~/dev/me/macsetup
    ./scripts/install-clt-brew-ansible.sh
    ```
+4. プレイブックを実行する（非対話でパスワード供給）。
+   ```sh
+   make setup EXTRA_VARS="homebrew_sudo_password=YOUR_PASSWORD"
+   # もしくは対話で入力する場合:
+   # make setup ANSIBLE_FLAGS='--ask-become-pass'
+   ```
 
 ## Install by Homebrew
 

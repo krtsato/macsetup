@@ -1,20 +1,50 @@
+- name: Determine Homebrew sudo password source
+  ansible.builtin.set_fact:
+    brew_password: "{{ homebrew_sudo_password | default(ansible_become_password, true) | default('', true) }}"
+
+- name: Require sudo password for Homebrew casks
+  ansible.builtin.fail:
+    msg: 'Homebrew cask installs need sudo. Set --ask-become-pass or EXTRA_VARS="homebrew_sudo_password=...".'
+  when: brew_password | length == 0
+
+- name: Create askpass helper for Homebrew sudo
+  ansible.builtin.copy:
+    dest: /tmp/homebrew_askpass.sh
+    mode: "0700"
+    content: |
+      #!/bin/sh
+      echo "{{ brew_password }}"
+  register: brew_askpass
+
 - name: Install Homebrew packages from Brewfile
+  vars:
+    brew_sudo_askpass: "{{ brew_askpass.path if (brew_askpass is defined and brew_askpass.path is defined) else omit }}"
   ansible.builtin.shell: |
     cd ~/dev/me/macsetup
     brew bundle --file ~/dev/me/dotfiles/brewfile.me
   environment:
     PATH: /opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin
     NONINTERACTIVE: "1"
+    SUDO_ASKPASS: "{{ brew_sudo_askpass | default(omit) }}"
   register: brew_bundle
   changed_when: "'Installing' in (brew_bundle.stdout + brew_bundle.stderr)"
   failed_when: brew_bundle.rc != 0
 
 - name: Dump installed Homebrew packages to dotfiles Brewfile
+  vars:
+    brew_sudo_askpass: "{{ brew_askpass.path if (brew_askpass is defined and brew_askpass.path is defined) else omit }}"
   ansible.builtin.shell: |
     brew bundle dump --file ~/dev/me/dotfiles/brewfile.me --force
   environment:
     PATH: /opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin
     NONINTERACTIVE: "1"
+    SUDO_ASKPASS: "{{ brew_sudo_askpass | default(omit) }}"
   register: brew_dump
   changed_when: "'Writing' in (brew_dump.stdout + brew_dump.stderr)"
   failed_when: brew_dump.rc != 0
+
+- name: Remove askpass helper for Homebrew sudo
+  ansible.builtin.file:
+    path: "{{ brew_askpass.path }}"
+    state: absent
+  when: brew_askpass is defined and brew_askpass.path is defined

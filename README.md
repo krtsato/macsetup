@@ -9,7 +9,7 @@
 | 1 | Xcode Command Line Tools をインストール | `xcode-select --install` |
 | 2 | macsetup リポジトリを clone | `git clone https://github.com/krtsato/macsetup.git ~/dev/me/macsetup` |
 | 3 | 秘匿ファイルを配置 | `~/.aws`, `~/.ssh`, `~/.claude.json`, `~/.gitconfig`, `~/.npmrc`, `~/.wakatime.cfg` など |
-| 4 | ワンコマンド実行 | `make setup` |
+| 4 | ワンコマンド実行 | `make setup ANSIBLE_FLAGS='--ask-become-pass'`（非対話にしたい場合は `make setup EXTRA_VARS="homebrew_sudo_password=YOUR_PASSWORD"` でも可） |
 
 ## Make タスク
 
@@ -17,7 +17,7 @@
 | ---------------- | --------------------------------------- | ------------------------------------------------------ |
 | `make setup`     | `bootstrap` 実行後にプレイブックを実行  | 初回セットアップに推奨                                 |
 | `make bootstrap` | Homebrew と Ansible を導入              | 初回のみ                                               |
-| `make playbook`  | `ansible/exec.yaml` を localhost に実行 | `make playbook EXTRA_VARS="github_ssh_key_type=ecdsa"` |
+| `make playbook`  | `ansible/exec.yaml` を localhost に実行 | `make playbook ANSIBLE_FLAGS='--ask-become-pass' EXTRA_VARS="github_ssh_key_type=ecdsa"` |
 | `make help`      | 簡易ヘルプ表示                          |                                                        |
 
 主要な変数
