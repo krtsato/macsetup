@@ -4,6 +4,7 @@
     brew bundle --file ~/dev/me/dotfiles/brewfile.me
   environment:
     PATH: /opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin
+    NONINTERACTIVE: "1"
   register: brew_bundle
   changed_when: "'Installing' in (brew_bundle.stdout + brew_bundle.stderr)"
   failed_when: brew_bundle.rc != 0
@@ -13,6 +14,7 @@
     brew bundle dump --file ~/dev/me/dotfiles/brewfile.me --force
   environment:
     PATH: /opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin
+    NONINTERACTIVE: "1"
   register: brew_dump
   changed_when: "'Writing' in (brew_dump.stdout + brew_dump.stderr)"
   failed_when: brew_dump.rc != 0
