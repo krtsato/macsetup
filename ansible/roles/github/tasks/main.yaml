@@ -16,7 +16,7 @@
 
 - name: Prompt to run gh auth login if not logged in
   ansible.builtin.pause:
-    prompt: "gh auth login が未完了です。別ターミナルで `gh auth login` を実行し、ブラウザ認証を完了したら Enter を押してください。"
+    prompt: "gh auth login が未完了です。別ターミナルで `gh auth login -h github.com -s admin:public_key` を実行し、ブラウザ認証を完了したら Enter を押してください。"
   when: gh_auth.rc != 0
 
 - name: Re-check GitHub authentication status

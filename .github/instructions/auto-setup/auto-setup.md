@@ -126,7 +126,7 @@ Homebrew でインストールするパッケージ一覧。
 
 ### Setup Git
 
-gh は Homebrew で導入される。プレイブック実行時、未ログインなら `gh auth login` を求めるプロンプトが出るので、その指示に従ってブラウザ認証する（事前に `gh auth login` を済ませておいてもよい）。
+gh は Homebrew で導入される。プレイブック実行時、未ログインなら `gh auth login -h github.com -s admin:public_key` を求めるプロンプトが出るので、その指示に従ってブラウザ認証する（事前に同コマンドでログインしておいてもよい）。
 
 SSH Key を生成して GitHub へ自動登録する。
 macsetup リポジトリはクローン済みである前提でスクリプトを実行する。
