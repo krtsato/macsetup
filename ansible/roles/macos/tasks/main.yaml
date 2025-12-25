@@ -6,7 +6,15 @@
   ansible.builtin.fail:
     msg: "macOS defaults (system) と NVRAM には sudo が必要です。--ask-become-pass か EXTRA_VARS=\"sudo_pass=...\" を渡してください。"
   when:
-    - (defaults_settings | selectattr('become', 'equalto', true) | list | length) > 0 or (nvram_settings | length) > 0
+    - (
+        defaults_settings
+        | selectattr('become', 'defined')
+        | selectattr('become', 'equalto', true)
+        | list
+        | length
+        | int
+      ) > 0
+      or (nvram_settings | length | int) > 0
     - macos_password | length == 0
 
 - name: Propagate macOS sudo password to become
