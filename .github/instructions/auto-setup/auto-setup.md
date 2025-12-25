@@ -216,6 +216,14 @@ killall ControlCenter
 killall SystemUIServer
 ```
 
+時刻表示を 24 時間表記に設定。
+
+```sh
+defaults write NSGlobalDomain AppleICUForce24HourTime -bool true
+killall ControlCenter
+killall SystemUIServer
+```
+
 ## Manual Setup
 
 CLI では変更できない、または sudo 権限が必要な項目は GUI で設定する。
