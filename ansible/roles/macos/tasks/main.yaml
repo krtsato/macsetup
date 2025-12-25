@@ -1,3 +1,19 @@
+- name: Determine macOS sudo password source
+  ansible.builtin.set_fact:
+    macos_password: "{{ macos_sudo_password | default(homebrew_sudo_password, true) | default(ansible_become_password, true) | default('', true) }}"
+
+- name: Require sudo password for system preferences/NVRAM
+  ansible.builtin.fail:
+    msg: "macOS defaults (system) と NVRAM には sudo が必要です。--ask-become-pass か EXTRA_VARS=\"macos_sudo_password=...\"（homebrew_sudo_password でも可）を渡してください。"
+  when:
+    - (defaults_settings | selectattr('become', 'equalto', true) | list | length) > 0 or (nvram_settings | length) > 0
+    - macos_password | length == 0
+
+- name: Propagate macOS sudo password to become
+  ansible.builtin.set_fact:
+    ansible_become_password: "{{ macos_password }}"
+  when: macos_password | length > 0
+
 - name: Apply macOS defaults
   become: "{{ item.become | default(false) }}"
   community.general.osx_defaults:

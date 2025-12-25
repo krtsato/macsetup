@@ -4,21 +4,21 @@
 
 ## セットアップ手順
 
-| 手順 | 内容 | コマンド/補足 |
-| --- | --- | --- |
-| 1 | Xcode Command Line Tools をインストール | `xcode-select --install` |
-| 2 | macsetup リポジトリを clone | `git clone https://github.com/krtsato/macsetup.git ~/dev/me/macsetup` |
-| 3 | 秘匿ファイルを配置 | `~/.aws`, `~/.ssh`, `~/.claude.json`, `~/.gitconfig`, `~/.npmrc`, `~/.wakatime.cfg` など |
-| 4 | ワンコマンド実行 | `make setup ANSIBLE_FLAGS='--ask-become-pass'`（非対話にしたい場合は `make setup EXTRA_VARS="homebrew_sudo_password=YOUR_PASSWORD"` でも可） |
+| 手順 | 内容                                    | コマンド/補足                                                                                                                                |
+| ---- | --------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------- |
+| 1    | Xcode Command Line Tools をインストール | `xcode-select --install`                                                                                                                     |
+| 2    | macsetup リポジトリを clone             | `git clone https://github.com/krtsato/macsetup.git ~/dev/me/macsetup`                                                                        |
+| 3    | 秘匿ファイルを配置                      | `~/.aws`, `~/.ssh`, `~/.claude.json`, `~/.gitconfig`, `~/.npmrc`, `~/.wakatime.cfg` など                                                     |
+| 4    | ワンコマンド実行                        | `make setup ANSIBLE_FLAGS='--ask-become-pass'`（非対話にしたい場合は `make setup EXTRA_VARS="homebrew_sudo_password=YOUR_PASSWORD"` でも可） |
 
 ## Make タスク
 
-| ターゲット       | 目的                                    | 例                                                     |
-| ---------------- | --------------------------------------- | ------------------------------------------------------ |
-| `make setup`     | `bootstrap` 実行後にプレイブックを実行  | 初回セットアップに推奨                                 |
-| `make bootstrap` | Homebrew と Ansible を導入              | 初回のみ                                               |
+| ターゲット       | 目的                                    | 例                                                                                       |
+| ---------------- | --------------------------------------- | ---------------------------------------------------------------------------------------- |
+| `make setup`     | `bootstrap` 実行後にプレイブックを実行  | 初回セットアップに推奨                                                                   |
+| `make bootstrap` | Homebrew と Ansible を導入              | 初回のみ                                                                                 |
 | `make playbook`  | `ansible/exec.yaml` を localhost に実行 | `make playbook ANSIBLE_FLAGS='--ask-become-pass' EXTRA_VARS="github_ssh_key_type=ecdsa"` |
-| `make help`      | 簡易ヘルプ表示                          |                                                        |
+| `make help`      | 簡易ヘルプ表示                          |                                                                                          |
 
 主要な変数
 
@@ -77,6 +77,7 @@ CLI では変更できない、または sudo 権限が必要な項目は GUI �
 | Microsoft Office       | インストール                                                                                   |
 | 旧 PC からのデータ移行 | 経理書類など                                                                                   |
 | GitHub ブラウザ認証    | `gh auth login` はブラウザ操作が必要。未ログインだと `github` ロールが停止するので先に完了する |
+| 入力ソース             | Google 日本語入力を有効化し、英字/かな切替を設定（System Settings > Keyboard > Input Sources） |
 
 iCloud 同期項目
 
