@@ -5,7 +5,7 @@
   environment:
     PATH: /opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin
   register: brew_bundle
-  changed_when: 'Installing' in (brew_bundle.stdout + brew_bundle.stderr)
+  changed_when: "'Installing' in (brew_bundle.stdout + brew_bundle.stderr)"
   failed_when: brew_bundle.rc != 0
 
 - name: Dump installed Homebrew packages to dotfiles Brewfile
