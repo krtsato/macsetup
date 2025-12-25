@@ -9,8 +9,7 @@
 | 1    | Xcode Command Line Tools をインストール | `xcode-select --install`                                                                                                                     |
 | 2    | macsetup リポジトリを clone             | `git clone https://github.com/krtsato/macsetup.git ~/dev/me/macsetup`                                                                        |
 | 3    | 秘匿ファイルを配置                      | `~/.aws`, `~/.ssh`, `~/.claude.json`, `~/.gitconfig`, `~/.npmrc`, `~/.wakatime.cfg` など                                                     |
-| 4    | GitHub CLI ログイン                     | `gh auth login` を実行（ブラウザ認証が必要）                                                                                                |
-| 5    | ワンコマンド実行                        | `make setup ANSIBLE_FLAGS='--ask-become-pass'`（非対話にしたい場合は `make setup EXTRA_VARS="homebrew_sudo_password=YOUR_PASSWORD"` でも可） |
+| 4    | ワンコマンド実行                        | `make setup ANSIBLE_FLAGS='--ask-become-pass'`（非対話にしたい場合は `make setup EXTRA_VARS="homebrew_sudo_password=YOUR_PASSWORD"` でも可） |
 
 ## Make タスク
 
@@ -30,7 +29,7 @@
 | `SSH_KEY_TYPE`                 | GitHub 鍵タイプ（`make playbook` 時の `github_ssh_key_type` に対応）        | `ed25519`                                | 任意   |
 | `GITHUB_EMAIL`                 | GitHub 鍵コメント用メール（`make playbook` 時の `github_ssh_email` に対応） | 空（省略可）                             | 任意   |
 
-補足: macOS ロールでは NVRAM を `/usr/sbin/nvram` で操作するため、sudo パスワード指定（`sudo_pass` もしくは `--ask-become-pass`）が必須です。
+補足: macOS ロールでは NVRAM を `/usr/sbin/nvram` で操作するため、sudo パスワード指定（`sudo_pass` もしくは `--ask-become-pass`）が必須です。GitHub ロール実行中に未ログインの場合、`gh auth login` のブラウザ認証を求めるプロンプトが表示されるので、その指示に従ってください。
 
 ### EXTRA_VARS の指定例
 

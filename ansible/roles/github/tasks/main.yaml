@@ -14,10 +14,18 @@
   changed_when: false
   failed_when: false
 
-- name: Abort if GitHub CLI is not logged in
-  ansible.builtin.fail:
-    msg: "gh auth login を完了してから再実行してください。（ブラウザ認証が必要です）"
+- name: Prompt to run gh auth login if not logged in
+  ansible.builtin.pause:
+    prompt: "gh auth login が未完了です。別ターミナルで `gh auth login` を実行し、ブラウザ認証を完了したら Enter を押してください。"
   when: gh_auth.rc != 0
+
+- name: Re-check GitHub authentication status
+  ansible.builtin.shell: gh auth status
+  environment:
+    PATH: /opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin
+  register: gh_auth_after
+  changed_when: false
+  failed_when: gh_auth_after.rc != 0
 
 - name: Create and register GitHub SSH key via script
   ansible.builtin.shell: >
