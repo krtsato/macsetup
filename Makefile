@@ -1,8 +1,10 @@
-ANSIBLE_PLAYBOOK ?= ansible
+BREW_PATH := /opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin
+ANSIBLE_PLAYBOOK ?= ansible-playbook
 ANSIBLE_FLAGS ?=
 INVENTORY ?= ansible/hosts
 PLAYBOOK ?= ansible/exec.yaml
 EXTRA_VARS ?=
+PATH_WITH_BREW := /opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin
 
 SSH_KEY_TYPE ?= ed25519
 GITHUB_EMAIL ?=
@@ -18,7 +20,7 @@ bootstrap:
 	./scripts/install-brew-ansible.sh
 
 playbook:
-	$(ANSIBLE_PLAYBOOK) $(ANSIBLE_FLAGS) -i $(INVENTORY) $(if $(EXTRA_VARS),-e "$(EXTRA_VARS)",) $(PLAYBOOK)
+	PATH=$(BREW_PATH) $(ANSIBLE_PLAYBOOK) $(ANSIBLE_FLAGS) -i $(INVENTORY) $(if $(EXTRA_VARS),-e "$(EXTRA_VARS)",) $(PLAYBOOK)
 
 github-ssh:
 	./scripts/setup-github-ssh.sh $(SSH_KEY_ARGS) $(GITHUB_EMAIL_ARG)
