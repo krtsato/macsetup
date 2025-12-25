@@ -207,7 +207,7 @@ defaults write NSGlobalDomain NSAutomaticQuoteSubstitutionEnabled -bool false
 トラックパッドの速度を調整。
 
 ```sh
-defaults write NSGlobalDomain com.apple.trackpad.scaling -float 3.0
+defaults write NSGlobalDomain com.apple.trackpad.scaling -int 3
 ```
 
 ### Dock
