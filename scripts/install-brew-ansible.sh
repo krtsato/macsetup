@@ -3,7 +3,7 @@ set -euo pipefail
 
 log() { printf "==> %s\n" "$*"; }
 
-log "Ansible インストールを開始します"
+log "Homebrew と Ansible のインストールを開始します"
 
 # Homebrew のインストール確認
 if ! command -v brew &> /dev/null; then
