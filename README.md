@@ -30,15 +30,14 @@
 
 ### EXTRA_VARS の指定例
 
-Homebrew/macOS の sudo パスワードと GitHub 鍵パラメータをまとめて指定する例:
+Homebrew/macOS の sudo パスワードと GitHub 鍵パラメータをまとめて指定し、完全非対話で実行する例:
 
 ```sh
 make setup \
-  ANSIBLE_FLAGS='--ask-become-pass' \
   EXTRA_VARS='sudo_pass=YOUR_PW github_ssh_key_type=ed25519 github_ssh_email=you@example.com'
 ```
 
-※完全非対話にしたい場合は `--ask-become-pass` を外し、EXTRA_VARS のパスワードのみで実行してください。
+※対話的にパスワード入力したい場合は EXTRA_VARS のパスワードを外し、`ANSIBLE_FLAGS='--ask-become-pass'` を付けて実行してください。
 
 ### 各種ファイル配置
 
