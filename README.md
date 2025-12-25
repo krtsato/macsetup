@@ -13,12 +13,12 @@
 
 ## Make タスク
 
-| ターゲット       | 目的                                    | 例                                                                                       |
-| ---------------- | --------------------------------------- | ---------------------------------------------------------------------------------------- |
-| `make setup`     | `bootstrap` 実行後にプレイブックを実行  | 初回セットアップに推奨                                                                   |
-| `make bootstrap` | Homebrew と Ansible を導入              | 初回のみ                                                                                 |
-| `make playbook`  | `ansible/exec.yaml` を localhost に実行 | `make playbook ANSIBLE_FLAGS='--ask-become-pass' EXTRA_VARS="github_ssh_key_type=ecdsa"` |
-| `make help`      | 簡易ヘルプ表示                          |                                                                                          |
+| ターゲット       | 目的                                    | 例                                                                                         |
+| ---------------- | --------------------------------------- | ------------------------------------------------------------------------------------------ |
+| `make setup`     | `bootstrap` 実行後にプレイブックを実行  | 初回セットアップに推奨                                                                     |
+| `make bootstrap` | Homebrew と Ansible を導入              | 初回のみ                                                                                   |
+| `make playbook`  | `ansible/exec.yaml` を localhost に実行 | `make playbook ANSIBLE_FLAGS='--ask-become-pass' EXTRA_VARS="github_ssh_key_type=ed25519"` |
+| `make help`      | 簡易ヘルプ表示                          |                                                                                            |
 
 主要な変数
 
@@ -27,6 +27,18 @@
 | `ANSIBLE_FLAGS` / `EXTRA_VARS` | `ansible-playbook` の追加オプション                                         | `EXTRA_VARS="github_setup_ssh=false"` など |
 | `SSH_KEY_TYPE`                 | GitHub 鍵タイプ（`make playbook` 時の `github_ssh_key_type` に対応）        | `ed25519`                                  |
 | `GITHUB_EMAIL`                 | GitHub 鍵コメント用メール（`make playbook` 時の `github_ssh_email` に対応） | 空（省略可）                               |
+
+### EXTRA_VARS の指定例（フル）
+
+Homebrew/macOS の sudo パスワードと GitHub 鍵パラメータを同時に指定する例:
+
+```sh
+make setup \
+  ANSIBLE_FLAGS='--ask-become-pass' \
+  EXTRA_VARS='homebrew_sudo_password=YOUR_PW macos_sudo_password=YOUR_PW github_ssh_key_type=ed25519 github_ssh_email=you@example.com'
+```
+
+※完全非対話にしたい場合は `--ask-become-pass` を外し、EXTRA_VARS のパスワードのみで実行してください。
 
 ### 各種ファイル配置
 
