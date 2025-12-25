@@ -9,7 +9,8 @@
 | 1    | Xcode Command Line Tools をインストール | `xcode-select --install`                                                                                                                     |
 | 2    | macsetup リポジトリを clone             | `git clone https://github.com/krtsato/macsetup.git ~/dev/me/macsetup`                                                                        |
 | 3    | 秘匿ファイルを配置                      | `~/.aws`, `~/.ssh`, `~/.claude.json`, `~/.gitconfig`, `~/.npmrc`, `~/.wakatime.cfg` など                                                     |
-| 4    | ワンコマンド実行                        | `make setup ANSIBLE_FLAGS='--ask-become-pass'`（非対話にしたい場合は `make setup EXTRA_VARS="homebrew_sudo_password=YOUR_PASSWORD"` でも可） |
+| 4    | GitHub CLI ログイン                     | `gh auth login` を実行（ブラウザ認証が必要）                                                                                                |
+| 5    | ワンコマンド実行                        | `make setup ANSIBLE_FLAGS='--ask-become-pass'`（非対話にしたい場合は `make setup EXTRA_VARS="homebrew_sudo_password=YOUR_PASSWORD"` でも可） |
 
 ## Make タスク
 
