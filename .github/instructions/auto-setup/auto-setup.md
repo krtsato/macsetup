@@ -3,24 +3,37 @@
 ## Install Homebrew and Ansible
 
 1. Xcode Command Line Tools をインストールする。
+
    ```sh
    xcode-select --install
    ```
+
 2. リポジトリをクローンする。
+
    ```sh
    git clone https://github.com/krtsato/macsetup.git ~/dev/me/macsetup
    ```
+
 3. Homebrew と Ansible をインストールする。
+
    ```sh
    cd ~/dev/me/macsetup
    ./scripts/install-clt-brew-ansible.sh
    ```
+
 4. プレイブックを実行する（非対話でパスワード供給）。
+
    ```sh
    make setup EXTRA_VARS="homebrew_sudo_password=YOUR_PASSWORD"
    # もしくは対話で入力する場合:
    # make setup ANSIBLE_FLAGS='--ask-become-pass'
    ```
+
+### Ansible / Homebrew 非対話オプションについて
+
+- Homebrew の cask インストールは sudo を要求するため、非対話で動かすには askpass を使う。  
+  - `homebrew_sudo_password`（EXTRA_VARS）または `--ask-become-pass` からパスワードを取得し、ロール側で `SUDO_ASKPASS` と `HOMEBREW_SUDO_ASKPASS=1` をセットしている。  
+  - どちらか一方を欠くと sudo プロンプトで停止するので、両方必要。
 
 ## Install by Homebrew
 
