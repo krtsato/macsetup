@@ -22,11 +22,14 @@
 
 主要な変数
 
-| 変数                           | 用途                                                                        | デフォルト/例                     |
-| ------------------------------ | --------------------------------------------------------------------------- | --------------------------------- |
-| `ANSIBLE_FLAGS` / `EXTRA_VARS` | `ansible-playbook` の追加オプション                                         | `EXTRA_VARS="sudo_pass=..."` など |
-| `SSH_KEY_TYPE`                 | GitHub 鍵タイプ（`make playbook` 時の `github_ssh_key_type` に対応）        | `ed25519`                         |
-| `GITHUB_EMAIL`                 | GitHub 鍵コメント用メール（`make playbook` 時の `github_ssh_email` に対応） | 空（省略可）                      |
+| 変数                           | 用途                                                                        | デフォルト/例                            | 必須か |
+| ------------------------------ | --------------------------------------------------------------------------- | ---------------------------------------- | ------ |
+| `ANSIBLE_FLAGS` / `EXTRA_VARS` | `ansible-playbook` の追加オプション                                         | `EXTRA_VARS="sudo_pass=..."` など        | 任意   |
+| `sudo_pass`                    | Homebrew/macOS ロールで sudo を非対話実行するためのパスワード               | （空、非対話で実行したい場合は指定する） | 任意   |
+| `SSH_KEY_TYPE`                 | GitHub 鍵タイプ（`make playbook` 時の `github_ssh_key_type` に対応）        | `ed25519`                                | 任意   |
+| `GITHUB_EMAIL`                 | GitHub 鍵コメント用メール（`make playbook` 時の `github_ssh_email` に対応） | 空（省略可）                             | 任意   |
+
+補足: macOS ロールでは NVRAM を `/usr/sbin/nvram` で操作するため、sudo パスワード指定（`sudo_pass` もしくは `--ask-become-pass`）が必須です。
 
 ### EXTRA_VARS の指定例
 
@@ -71,6 +74,8 @@ Ansible の `github` ロールが gh ログイン状態の確認と SSH 鍵作�
 | 7    | `go`            | Go ツールを `go install`（mise shims を PATH に含めて実行） |
 | 8    | `vscode`        | `./scripts/install-vscode-extensions.sh`                    |
 
+補足: Brewfile は dotfiles リポジトリで管理し、`link-symbolic-dotfiles.sh` が `~/brewfile.me` へリンクします。プレイブック内のシェルは必要最小限の PATH で実行する設計です。
+
 ## 手動作業
 
 CLI では変更できない、または sudo 権限が必要な項目は GUI で設定する。
@@ -107,8 +112,3 @@ iCloud 同期項目
 | リマインダー | off      |
 | Safari       | off      |
 | その他       | off      |
-
-## 補足
-
-- Brewfile は dotfiles リポジトリで管理し、`link-symbolic-dotfiles.sh` が `~/brewfile.me` へリンクします。
-- プレイブック内のシェルは必要最小限の PATH で実行する設計です。

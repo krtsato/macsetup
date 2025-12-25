@@ -44,14 +44,18 @@
 
 - name: Read NVRAM values
   become: true
-  ansible.builtin.command: nvram -p
+  ansible.builtin.command: /usr/sbin/nvram -p
+  environment:
+    PATH: /usr/sbin:/usr/bin:/bin
   register: nvram_dump
   changed_when: false
   when: nvram_settings | length > 0
 
 - name: Ensure NVRAM settings
   become: true
-  ansible.builtin.command: "nvram {{ item.key }}={{ item.value }}"
+  ansible.builtin.command: "/usr/sbin/nvram {{ item.key }}={{ item.value }}"
+  environment:
+    PATH: /usr/sbin:/usr/bin:/bin
   loop: "{{ nvram_settings }}"
   when:
     - nvram_settings | length > 0
