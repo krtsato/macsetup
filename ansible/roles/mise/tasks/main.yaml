@@ -1,3 +1,15 @@
+- name: Ensure SSH config permissions are strict enough for mise downloads
+  # stat first to avoid creating ~/.ssh/config when it does not exist
+  ansible.builtin.stat:
+    path: "{{ lookup('env', 'HOME') }}/.ssh/config"
+  register: ssh_config
+
+- name: Fix SSH config permissions
+  ansible.builtin.file:
+    path: "{{ ssh_config.stat.path }}"
+    mode: "0600"
+  when: ssh_config.stat.exists | default(false)
+
 - name: Install mise tools via script
   ansible.builtin.shell: ./scripts/install-mise-tools.sh
   args:
@@ -6,4 +18,6 @@
     PATH: /opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin
   register: mise_result
   changed_when: "'install' in mise_result.stdout or 'install' in mise_result.stderr"
-  failed_when: mise_result.rc != 0
+  until: mise_result.rc == 0
+  retries: 2
+  delay: 10

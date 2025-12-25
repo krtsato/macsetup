@@ -34,6 +34,7 @@
 - macOS ロールで NVRAM を触るため、sudo パスワード指定（`sudo_pass` か `--ask-become-pass`）が必須。
 - GitHub ロール中に未ログインなら `gh auth login -h github.com -s admin:public_key` を求めるプロンプトが出るので、従ってブラウザ認証する。
 - dotfiles ロールは `SKIP_CONFIRM=1` で `link-symbolic-dotfiles.sh` を非対話実行（手動実行時は確認プロンプトあり）。
+- mise ロールは `.ssh/config` のパーミッションを 600 に自動修正してからインストールを実行し、ダウンロードの一時失敗時にはリトライします。
 
 ### EXTRA_VARS の指定例
 
