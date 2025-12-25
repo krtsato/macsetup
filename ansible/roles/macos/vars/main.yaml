@@ -1,8 +1,4 @@
 defaults_settings:
-  # Accessibility Display
-  - { domain: com.apple.universalaccess, key: reduceMotion, type: int, value: 1 }
-  - { domain: com.apple.universalaccess, key: reduceTransparency, type: int, value: 1 }
-  - { domain: com.apple.universalaccess, key: mouseDriverCursorSize, type: float, value: 2.0 }
   # Keyboard
   - { domain: NSGlobalDomain, key: NSAutomaticCapitalizationEnabled, type: bool, value: false }
   - { domain: NSGlobalDomain, key: NSAutomaticQuoteSubstitutionEnabled, type: bool, value: false }
@@ -10,9 +6,9 @@ defaults_settings:
   - { domain: /Library/Preferences/com.apple.iokit.AmbientLightSensor, key: AutomaticKeyboardEnabled, type: bool, value: false, become: true }
   - { domain: /Library/Preferences/com.apple.iokit.AmbientLightSensor, key: KeyboardBacklightLevel, type: float, value: 0.0, become: true }
   # Trackpad
-  - { domain: NSGlobalDomain, key: com.apple.trackpad.scaling, type: int, value: 3 }
+  - { domain: NSGlobalDomain, key: com.apple.trackpad.scaling, type: float, value: 3.0 }
   # Dock
-  - { domain: com.apple.dock, key: tilesize, type: int, value: 41 }
+  - { domain: com.apple.dock, key: tilesize, type: int, value: 40 }
   - { domain: com.apple.dock, key: orientation, type: string, value: left }
   - { domain: com.apple.dock, key: mineffect, type: string, value: scale }
   - { domain: com.apple.dock, key: minimize-to-application, type: bool, value: true }

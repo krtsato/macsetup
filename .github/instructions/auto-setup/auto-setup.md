@@ -207,7 +207,7 @@ defaults write NSGlobalDomain NSAutomaticQuoteSubstitutionEnabled -bool false
 トラックパッドの速度を調整。
 
 ```sh
-defaults write NSGlobalDomain com.apple.trackpad.scaling -int 3
+defaults write NSGlobalDomain com.apple.trackpad.scaling -float 3.0
 ```
 
 ### Dock
@@ -215,7 +215,7 @@ defaults write NSGlobalDomain com.apple.trackpad.scaling -int 3
 Dock の位置・サイズ・動作を設定。
 
 ```sh
-defaults write com.apple.dock tilesize -int 41
+defaults write com.apple.dock tilesize -int 40
 defaults write com.apple.dock orientation -string left
 defaults write com.apple.dock mineffect -string scale
 defaults write com.apple.dock minimize-to-application -bool true
@@ -253,6 +253,7 @@ CLI では変更できない、または sudo 権限が必要な項目は GUI �
 
 | 項目                   | 設定内容                         |
 | ---------------------- | -------------------------------- |
+| アクセシビリティ表示   | Reduce Motion/Transparency を有効化、ポインタサイズを拡大 |
 | コンピュータ名         | krtsato-macbook{model}-yyyy      |
 | ディスプレイ           | 外付けディスプレイ解像度         |
 | ディスプレイ           | Night Shift スケジュール         |
