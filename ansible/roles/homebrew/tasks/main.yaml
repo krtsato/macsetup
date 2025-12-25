@@ -1,10 +1,10 @@
 - name: Determine Homebrew sudo password source
   ansible.builtin.set_fact:
-    brew_password: "{{ homebrew_sudo_password | default(ansible_become_password, true) | default('', true) }}"
+    brew_password: "{{ sudo_pass | default(ansible_become_password, true) | default('', true) }}"
 
 - name: Require sudo password for Homebrew casks
   ansible.builtin.fail:
-    msg: 'Homebrew cask installs need sudo. Set --ask-become-pass or EXTRA_VARS="homebrew_sudo_password=...".'
+    msg: 'Homebrew cask installs need sudo. Set --ask-become-pass or EXTRA_VARS="sudo_pass=...".'
   when: brew_password | length == 0
 
 - name: Create askpass helper for Homebrew sudo
