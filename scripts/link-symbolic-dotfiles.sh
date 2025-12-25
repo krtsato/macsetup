@@ -59,6 +59,12 @@ link_dotfiles() {
   )
 
   for name origin_dir in ${(kv)dot_files_dirs}; do
+    # Skip if source and destination are identical (avoids self-symlink loops)
+    if [[ "$dotfiles_root/$name" == "$origin_dir" ]]; then
+      log "skip (source == destination): $dotfiles_root/$name"
+      continue
+    fi
+
     mkdir -p "$(dirname "$origin_dir")"
     log "link: $dotfiles_root/$name -> $origin_dir"
     ln -fnsv "$dotfiles_root/$name" "$origin_dir"
