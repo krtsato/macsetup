@@ -33,7 +33,7 @@
     {{ '-t ' ~ github_ssh_key_type if github_ssh_key_type != 'ed25519' else '' }}
     {{ github_ssh_email if github_ssh_email else '' }}
   args:
-    chdir: /Users/s11639/dev/me/macsetup
+    chdir: ~/dev/me/macsetup
     creates: "{{ github_ssh_key_path }}"
   environment:
     PATH: /opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin
