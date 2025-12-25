@@ -12,6 +12,11 @@ main() {
 }
 
 confirm_prerequisites() {
+  # Skip prompt when running non-interactively (e.g., Ansible) or when explicitly set.
+  if [[ -n "${SKIP_CONFIRM:-}" || ! -t 0 ]]; then
+    return 0
+  fi
+
   cat <<'EOF_MSG'
 Have you done these tasks?
 - setup zsh, VSCode

@@ -151,6 +151,8 @@ cd ~/dev/me/macsetup
 ./scripts/link-symbolic-dotfiles.sh
 ```
 
+（プレイブックでは `SKIP_CONFIRM=1` で非対話実行しているため、手動実行時はプロンプトに従ってください）
+
 ### Global Install
 
 mise tools をインストール。
@@ -245,20 +247,20 @@ killall SystemUIServer
 
 CLI では変更できない、または sudo 権限が必要な項目は GUI で設定する。
 
-| 項目                   | 設定内容                         |
-| ---------------------- | -------------------------------- |
+| 項目                   | 設定内容                                                  |
+| ---------------------- | --------------------------------------------------------- |
 | アクセシビリティ表示   | Reduce Motion/Transparency を有効化、ポインタサイズを拡大 |
-| コンピュータ名         | krtsato-macbook{model}-yyyy      |
-| ディスプレイ           | 外付けディスプレイ解像度         |
-| ディスプレイ           | Night Shift スケジュール         |
-| 日付と時計             | 日付を表示                       |
-| 通知                   | 編集                             |
-| Finder                 | サイドバー表示項目               |
-| iCloud                 | サインイン・各項目の同期         |
-| Raycast                | 設定のインポート                 |
-| Microsoft Office       | インストール                     |
-| 旧 PC からのデータ移行 | 経理書類など                     |
-| 入力ソース             | Google 日本語入力の英字/かな切替 |
+| コンピュータ名         | krtsato-macbook{model}-yyyy                               |
+| ディスプレイ           | 外付けディスプレイ解像度                                  |
+| ディスプレイ           | Night Shift スケジュール                                  |
+| 日付と時計             | 日付を表示                                                |
+| 通知                   | 編集                                                      |
+| Finder                 | サイドバー表示項目                                        |
+| iCloud                 | サインイン・各項目の同期                                  |
+| Raycast                | 設定のインポート                                          |
+| Microsoft Office       | インストール                                              |
+| 旧 PC からのデータ移行 | 経理書類など                                              |
+| 入力ソース             | Google 日本語入力の英字/かな切替                          |
 
 iCloud 同期項目
 

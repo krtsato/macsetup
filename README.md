@@ -29,7 +29,11 @@
 | `SSH_KEY_TYPE`                 | GitHub 鍵タイプ（`make playbook` 時の `github_ssh_key_type` に対応）        | `ed25519`                                | 任意   |
 | `GITHUB_EMAIL`                 | GitHub 鍵コメント用メール（`make playbook` 時の `github_ssh_email` に対応） | 空（省略可）                             | 任意   |
 
-補足: macOS ロールでは NVRAM を `/usr/sbin/nvram` で操作するため、sudo パスワード指定（`sudo_pass` もしくは `--ask-become-pass`）が必須です。GitHub ロール実行中に未ログインの場合、`gh auth login -h github.com -s admin:public_key` を求めるプロンプトが表示されるので、その指示に従ってブラウザ認証してください。
+補足:
+
+- macOS ロールで NVRAM を触るため、sudo パスワード指定（`sudo_pass` か `--ask-become-pass`）が必須。
+- GitHub ロール中に未ログインなら `gh auth login -h github.com -s admin:public_key` を求めるプロンプトが出るので、従ってブラウザ認証する。
+- dotfiles ロールは `SKIP_CONFIRM=1` で `link-symbolic-dotfiles.sh` を非対話実行（手動実行時は確認プロンプトあり）。
 
 ### EXTRA_VARS の指定例
 

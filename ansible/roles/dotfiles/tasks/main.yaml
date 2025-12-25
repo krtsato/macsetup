@@ -1,7 +1,7 @@
 - name: Run link-symbolic-dotfiles.sh non-interactively (creates symlinks + Brewfile dump)
   ansible.builtin.shell: |
     cd ~/dev/me/macsetup
-    printf 'y\n' | ./scripts/link-symbolic-dotfiles.sh
+    SKIP_CONFIRM=1 ./scripts/link-symbolic-dotfiles.sh
   environment:
     PATH: /opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin
   register: link_script
