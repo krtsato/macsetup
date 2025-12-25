@@ -24,16 +24,16 @@
 4. プレイブックを実行する（非対話でパスワード供給）。
 
    ```sh
-   make setup EXTRA_VARS="homebrew_sudo_password=YOUR_PASSWORD"
+   make setup EXTRA_VARS="sudo_pass=YOUR_PASSWORD"
    # もしくは対話で入力する場合:
    # make setup ANSIBLE_FLAGS='--ask-become-pass'
    ```
 
 ### Ansible / Homebrew 非対話オプションについて
 
-- Homebrew の cask インストールは sudo を要求するため、非対話で動かすには askpass を使う。  
-  - `homebrew_sudo_password`（EXTRA_VARS）または `--ask-become-pass` からパスワードを取得し、ロール側で `SUDO_ASKPASS` と `HOMEBREW_SUDO_ASKPASS=1` をセットしている。  
-  - どちらか一方を欠くと sudo プロンプトで停止するので、両方必要。
+- Homebrew / macOS のタスクで sudo が必要になるため、非対話で動かすには askpass を使う。  
+  - `sudo_pass`（EXTRA_VARS）または `--ask-become-pass` からパスワードを取得し、`SUDO_ASKPASS` と `HOMEBREW_SUDO_ASKPASS=1` をセットしている。  
+  - GitHub ロールで未ログインの場合は `gh auth login -h github.com -s admin:public_key` のプロンプトが出るので、指示に従ってブラウザ認証する。
 
 ## Install by Homebrew
 
@@ -179,33 +179,6 @@ VSCode Extensions をインストール。
 
 ## Macbook Environment
 
-### Accessibility Display
-
-アクセシビリティ表示を調整。
-
-```sh
-defaults write com.apple.universalaccess reduceMotion -int 1
-defaults write com.apple.universalaccess reduceTransparency -int 1
-defaults write com.apple.universalaccess mouseDriverCursorSize -float 2.0
-```
-
-### Keyboard
-
-キーボードの自動補助を無効化。
-
-```sh
-defaults write NSGlobalDomain NSAutomaticCapitalizationEnabled -bool false
-defaults write NSGlobalDomain NSAutomaticQuoteSubstitutionEnabled -bool false
-```
-
-### Trackpad
-
-トラックパッドの速度を調整。
-
-```sh
-defaults write NSGlobalDomain com.apple.trackpad.scaling -int 3
-```
-
 ### Dock
 
 Dock の位置・サイズ・動作を設定。
@@ -247,20 +220,21 @@ killall SystemUIServer
 
 CLI では変更できない、または sudo 権限が必要な項目は GUI で設定する。
 
-| 項目                   | 設定内容                                                  |
-| ---------------------- | --------------------------------------------------------- |
-| アクセシビリティ表示   | Reduce Motion/Transparency を有効化、ポインタサイズを拡大 |
-| コンピュータ名         | krtsato-macbook{model}-yyyy                               |
-| ディスプレイ           | 外付けディスプレイ解像度                                  |
-| ディスプレイ           | Night Shift スケジュール                                  |
-| 日付と時計             | 日付を表示                                                |
-| 通知                   | 編集                                                      |
-| Finder                 | サイドバー表示項目                                        |
-| iCloud                 | サインイン・各項目の同期                                  |
-| Raycast                | 設定のインポート                                          |
-| Microsoft Office       | インストール                                              |
-| 旧 PC からのデータ移行 | 経理書類など                                              |
-| 入力ソース             | Google 日本語入力の英字/かな切替                          |
+| 項目                   | 設定内容                                                                                       |
+| ---------------------- | ---------------------------------------------------------------------------------------------- |
+| アクセシビリティ表示   | 視差効果を減らす、透明度を下げる、ポインタサイズを拡大、ポインタスクロール各種最速             |
+| コンピュータ名         | krtsato-macbook{model}-yyyy                                                                    |
+| ディスプレイ           | 外付けディスプレイ解像度                                                                       |
+| ディスプレイ           | Night Shift スケジュール設定                                                                   |
+| 日付と時計             | 日付を表示                                                                                     |
+| 通知                   | 編集                                                                                           |
+| Finder                 | サイドバー表示項目                                                                             |
+| iCloud                 | サインイン・各項目の同期設定                                                                   |
+| Raycast                | 設定のインポート                                                                               |
+| Microsoft Office       | インストール                                                                                   |
+| 旧 PC からのデータ移行 | 経理書類など                                                                                   |
+| GitHub ブラウザ認証    | `gh auth login` はブラウザ操作が必要。未ログインだと `github` ロールが停止するので先に完了する |
+| 入力ソース             | Google 日本語入力を有効化し、英字/かな切替を設定（System Settings > Keyboard > Input Sources） |
 
 iCloud 同期項目
 
