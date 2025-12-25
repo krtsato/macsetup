@@ -15,7 +15,7 @@ GITHUB_EMAIL_ARG := $(if $(GITHUB_EMAIL), $(GITHUB_EMAIL),)
 setup: bootstrap playbook
 
 bootstrap:
-	./scripts/install-clt-brew-ansible.sh
+	./scripts/install-brew-ansible.sh
 
 playbook:
 	$(ANSIBLE_PLAYBOOK) $(ANSIBLE_FLAGS) -i $(INVENTORY) $(if $(EXTRA_VARS),-e "$(EXTRA_VARS)",) $(PLAYBOOK)
