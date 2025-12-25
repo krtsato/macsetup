@@ -1,4 +1,4 @@
-ANSIBLE_PLAYBOOK ?= ansible-playbook
+ANSIBLE_PLAYBOOK ?= ansible
 ANSIBLE_FLAGS ?=
 INVENTORY ?= ansible/hosts
 PLAYBOOK ?= ansible/exec.yaml
