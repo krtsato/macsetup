@@ -181,7 +181,7 @@ VSCode Extensions をインストール。
 
 ### Dock
 
-Dock の位置・サイズ・動作を設定。
+Dock の位置・サイズ・動作・表示項目を設定。
 
 ```sh
 defaults write com.apple.dock tilesize -int 40
@@ -190,7 +190,18 @@ defaults write com.apple.dock mineffect -string scale
 defaults write com.apple.dock minimize-to-application -bool true
 defaults write com.apple.dock autohide -bool true
 defaults write com.apple.dock show-recents -bool false
+defaults write com.apple.dock persistent-apps -array
 killall Dock
+```
+
+### Keyboard / Trackpad
+
+キーリピート・トラックパッド速度を最速にする。
+
+```sh
+defaults write NSGlobalDomain InitialKeyRepeat -int 10
+defaults write NSGlobalDomain KeyRepeat -int 1
+defaults write NSGlobalDomain com.apple.trackpad.scaling -float 3.0
 ```
 
 ### Finder
@@ -201,7 +212,17 @@ Finder の表示設定を変更。
 defaults write com.apple.finder AppleShowAllFiles -bool true
 defaults write NSGlobalDomain AppleShowAllExtensions -bool true
 defaults write com.apple.desktopservices DSDontWriteNetworkStores -bool true
+defaults write com.apple.finder ShowStatusBar -bool true
 killall Finder
+```
+
+### Appearance
+
+ダークモードに固定する。
+
+```sh
+defaults write NSGlobalDomain AppleInterfaceStyle -string "Dark"
+defaults write NSGlobalDomain AppleInterfaceStyleSwitchesAutomatically -bool false
 ```
 
 ### Menu Bar
@@ -209,7 +230,7 @@ killall Finder
 メニューバーの表示項目を設定。
 
 ```sh
-defaults write com.apple.menuextra.battery ShowPercent -string "YES"
+defaults write com.apple.controlcenter BatteryShowPercentage -bool true
 defaults write com.apple.controlcenter "NSStatusItem Visible Bluetooth" -bool true
 defaults write com.apple.controlcenter "NSStatusItem Visible Sound" -bool true
 killall ControlCenter
@@ -220,23 +241,25 @@ killall SystemUIServer
 
 CLI では変更できない、または sudo 権限が必要な項目は GUI で設定する。
 
-| 項目                   | 設定内容                                                                                       |
-| ---------------------- | ---------------------------------------------------------------------------------------------- |
-| アクセシビリティ表示   | 視差効果を減らす、透明度を下げる、ポインタサイズを拡大、ポインタスクロール各種最速             |
-| コンピュータ名         | krtsato-macbook{model}-yyyy                                                                    |
-| ディスプレイ           | 外付けディスプレイ解像度                                                                       |
-| ディスプレイ           | Night Shift スケジュール設定                                                                   |
-| 日付と時計             | 日付を表示                                                                                     |
-| 通知                   | 編集                                                                                           |
-| Finder                 | サイドバー表示項目                                                                             |
-| iCloud                 | サインイン・各項目の同期設定                                                                   |
-| Raycast                | 設定のインポート                                                                               |
-| Microsoft Office       | インストール                                                                                   |
-| 旧 PC からのデータ移行 | 経理書類など                                                                                   |
-| GitHub ブラウザ認証    | `gh auth login` はブラウザ操作が必要。未ログインだと `github` ロールが停止するので先に完了する |
-| 入力ソース             | Google 日本語入力を有効化し、英字/かな切替を設定（System Settings > Keyboard > Input Sources） |
-| Terminal フォント      | Terminal.app のプロファイルで VSCode の settings.json と同等の Nerd Font（例: FiraCodeNerdFontCompleteM-Retina）を手動設定 |
-| デフォルトシェル       | Homebrew の zsh (`/opt/homebrew/bin/zsh`) があればそれを設定。無ければ `/bin/zsh` |
+| 項目                     | 設定内容                                                                                                                   |
+| ------------------------ | -------------------------------------------------------------------------------------------------------------------------- |
+| アクセシビリティ表示     | 視差効果を減らす、透明度を下げる、ポインタサイズを拡大、ポインタスクロール各種最速                                         |
+| コンピュータ名           | krtsato-macbook{model}-yyyy                                                                                                |
+| ディスプレイ             | 外付けディスプレイ解像度                                                                                                   |
+| ディスプレイ             | Night Shift スケジュール設定                                                                                               |
+| 日付と時計               | 日付を表示                                                                                                                 |
+| 通知                     | 編集                                                                                                                       |
+| Finder                   | サイドバー表示項目                                                                                                         |
+| iCloud                   | サインイン・各項目の同期設定                                                                                               |
+| Raycast                  | 設定のインポート                                                                                                           |
+| Microsoft Office         | インストール                                                                                                               |
+| 旧 PC からのデータ移行   | 経理書類など                                                                                                               |
+| GitHub ブラウザ認証      | `gh auth login` はブラウザ操作が必要。未ログインだと `github` ロールが停止するので先に完了する                             |
+| Touch ID                 | 指紋を追加（System Settings > Touch ID & Password）                                                                        |
+| 入力ソース               | Google 日本語入力を有効化し、英字/かな切替を設定（System Settings > Keyboard > Input Sources）                             |
+| Terminal フォント        | Terminal.app のプロファイルで VSCode の settings.json と同等の Nerd Font（例: FiraCodeNerdFontCompleteM-Retina）を手動設定 |
+| デフォルトシェル         | Homebrew の zsh (`/opt/homebrew/bin/zsh`) があればそれを設定。無ければ `/bin/zsh`                                          |
+| Spotlight ショートカット | [⌘Space を無効化](https://support.apple.com/ja-jp/guide/mac-help/mchlp2864/14.0/mac/14.0)                                  |
 
 iCloud 同期項目
 

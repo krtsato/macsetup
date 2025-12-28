@@ -26,6 +26,7 @@
     PATH: /opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin
     NONINTERACTIVE: "1"
     HOMEBREW_SUDO_ASKPASS: "1"
+    HOMEBREW_NO_ENV_FILTERING: "1"
     SUDO_ASKPASS: "{{ brew_sudo_askpass | default(omit) }}"
   register: brew_bundle
   changed_when: "'Installing' in (brew_bundle.stdout + brew_bundle.stderr)"
@@ -40,6 +41,7 @@
     PATH: /opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin
     NONINTERACTIVE: "1"
     HOMEBREW_SUDO_ASKPASS: "1"
+    HOMEBREW_NO_ENV_FILTERING: "1"
     SUDO_ASKPASS: "{{ brew_sudo_askpass | default(omit) }}"
   register: brew_dump
   changed_when: "'Writing' in (brew_dump.stdout + brew_dump.stderr)"

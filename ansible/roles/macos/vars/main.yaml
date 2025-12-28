@@ -1,12 +1,17 @@
 defaults_settings:
+  # Appearance
+  - { domain: NSGlobalDomain, key: AppleInterfaceStyle, type: string, value: "Dark" }
+  - { domain: NSGlobalDomain, key: AppleInterfaceStyleSwitchesAutomatically, type: bool, value: false }
   # Keyboard
   - { domain: NSGlobalDomain, key: NSAutomaticCapitalizationEnabled, type: bool, value: false }
   - { domain: NSGlobalDomain, key: NSAutomaticQuoteSubstitutionEnabled, type: bool, value: false }
+  - { domain: NSGlobalDomain, key: InitialKeyRepeat, type: int, value: 10 }
+  - { domain: NSGlobalDomain, key: KeyRepeat, type: int, value: 1 }
   # Keyboard backlight (system-wide)
   - { domain: /Library/Preferences/com.apple.iokit.AmbientLightSensor, key: AutomaticKeyboardEnabled, type: bool, value: false, become: true }
   - { domain: /Library/Preferences/com.apple.iokit.AmbientLightSensor, key: KeyboardBacklightLevel, type: float, value: 0.0, become: true }
   # Trackpad
-  - { domain: NSGlobalDomain, key: com.apple.trackpad.scaling, type: int, value: 3 }
+  - { domain: NSGlobalDomain, key: com.apple.trackpad.scaling, type: float, value: 3.0 }
   # Dock
   - { domain: com.apple.dock, key: tilesize, type: int, value: 40 }
   - { domain: com.apple.dock, key: orientation, type: string, value: left }
@@ -14,12 +19,14 @@ defaults_settings:
   - { domain: com.apple.dock, key: minimize-to-application, type: bool, value: true }
   - { domain: com.apple.dock, key: autohide, type: bool, value: true }
   - { domain: com.apple.dock, key: show-recents, type: bool, value: false }
+  - { domain: com.apple.dock, key: persistent-apps, type: array, value: [] }
   # Finder
   - { domain: com.apple.finder, key: AppleShowAllFiles, type: bool, value: true }
   - { domain: NSGlobalDomain, key: AppleShowAllExtensions, type: bool, value: true }
   - { domain: com.apple.desktopservices, key: DSDontWriteNetworkStores, type: bool, value: true }
+  - { domain: com.apple.finder, key: ShowStatusBar, type: bool, value: true }
   # Menu Bar
-  - { domain: com.apple.menuextra.battery, key: ShowPercent, type: string, value: "YES" }
+  - { domain: com.apple.controlcenter, key: BatteryShowPercentage, type: bool, value: true }
   - { domain: com.apple.controlcenter, key: "NSStatusItem Visible Bluetooth", type: bool, value: true }
   - { domain: com.apple.controlcenter, key: "NSStatusItem Visible Sound", type: bool, value: true }
 
