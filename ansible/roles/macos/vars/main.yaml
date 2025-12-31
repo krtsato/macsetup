@@ -1,3 +1,5 @@
+screen_capture_location: "{{ lookup('env', 'HOME') }}/Desktop/tmp"
+
 defaults_settings:
   # Appearance
   - { domain: NSGlobalDomain, key: AppleInterfaceStyle, type: string, value: "Dark" }
@@ -25,6 +27,10 @@ defaults_settings:
   - { domain: NSGlobalDomain, key: AppleShowAllExtensions, type: bool, value: true }
   - { domain: com.apple.desktopservices, key: DSDontWriteNetworkStores, type: bool, value: true }
   - { domain: com.apple.finder, key: ShowStatusBar, type: bool, value: true }
+  # Screenshot
+  - { domain: com.apple.screencapture, key: name, type: string, value: "img" }
+  - { domain: com.apple.screencapture, key: include-date, type: bool, value: false }
+  - { domain: com.apple.screencapture, key: location, type: string, value: "{{ screen_capture_location }}" }
   # Menu Bar
   - { domain: com.apple.controlcenter, key: BatteryShowPercentage, type: bool, value: true }
   - { domain: com.apple.controlcenter, key: "NSStatusItem Visible Bluetooth", type: bool, value: true }

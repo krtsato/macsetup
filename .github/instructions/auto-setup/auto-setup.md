@@ -204,6 +204,18 @@ defaults write NSGlobalDomain KeyRepeat -int 1
 defaults write NSGlobalDomain com.apple.trackpad.scaling -float 3.0
 ```
 
+### Screenshot
+
+スクリーンショットのファイル名と保存場所を変更する。
+
+```sh
+mkdir -p ~/Desktop/tmp
+defaults write com.apple.screencapture name img
+defaults write com.apple.screencapture include-date -bool false
+defaults write com.apple.screencapture location ~/Desktop/tmp
+killall SystemUIServer
+```
+
 ### Finder
 
 Finder の表示設定を変更。
