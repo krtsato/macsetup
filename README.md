@@ -73,7 +73,7 @@ Ansible の `github` ロールが gh ログイン状態の確認と SSH 鍵作�
 | ---- | --------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | 1    | `dotfiles_repo` | `~/dev/me/dotfiles` を clone/pull（Brewfile 取得含む）                                                                                                        |
 | 2    | `homebrew`      | Brewfile でインストール → 同ファイルに dump                                                                                                                   |
-| 3    | `macos`         | `osx_defaults` で macOS 設定適用（ダークモード固定、キーリピート最速、トラックパッド速度最速、Dock アプリ初期化、ステータスバー表示、バッテリー残量表示など） |
+| 3    | `macos`         | `osx_defaults` で macOS 設定適用（ダークモード固定、キーリピート高速(InitialKeyRepeat=13/KeyRepeat=1)、トラックパッド速度最速、Dock アプリ初期化、ステータスバー表示、バッテリー残量表示など） |
 | 4    | `dotfiles`      | `./scripts/link-symbolic-dotfiles.sh` を非対話実行                                                                                                            |
 | 5    | `github`        | gh ログイン確認 → `setup-github-ssh.sh` で鍵登録                                                                                                              |
 | 6    | `mise`          | `./scripts/install-mise-tools.sh`                                                                                                                             |

@@ -196,10 +196,10 @@ killall Dock
 
 ### Keyboard / Trackpad
 
-キーリピート・トラックパッド速度を最速にする。
+キーリピートを高速化し、トラックパッド速度を最速にする。
 
 ```sh
-defaults write NSGlobalDomain InitialKeyRepeat -int 10
+defaults write NSGlobalDomain InitialKeyRepeat -int 13
 defaults write NSGlobalDomain KeyRepeat -int 1
 defaults write NSGlobalDomain com.apple.trackpad.scaling -float 3.0
 ```
