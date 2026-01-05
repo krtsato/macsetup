@@ -27,6 +27,7 @@ defaults_settings:
   - { domain: NSGlobalDomain, key: AppleShowAllExtensions, type: bool, value: true }
   - { domain: com.apple.desktopservices, key: DSDontWriteNetworkStores, type: bool, value: true }
   - { domain: com.apple.finder, key: ShowStatusBar, type: bool, value: true }
+  - { domain: com.apple.finder, key: ShowPathbar, type: bool, value: true }
   # Screenshot
   - { domain: com.apple.screencapture, key: name, type: string, value: "img" }
   - { domain: com.apple.screencapture, key: include-date, type: bool, value: false }

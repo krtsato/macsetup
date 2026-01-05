@@ -225,6 +225,7 @@ defaults write com.apple.finder AppleShowAllFiles -bool true
 defaults write NSGlobalDomain AppleShowAllExtensions -bool true
 defaults write com.apple.desktopservices DSDontWriteNetworkStores -bool true
 defaults write com.apple.finder ShowStatusBar -bool true
+defaults write com.apple.finder ShowPathbar -bool true
 killall Finder
 ```
 
