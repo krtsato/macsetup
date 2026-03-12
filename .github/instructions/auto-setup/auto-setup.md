@@ -78,6 +78,7 @@ Homebrew でインストールするパッケージ一覧。
 - appcleaner
 - aws-vpn-client
 - claude-code
+- cmux
 - deepl
 - discord
 - displaylink
