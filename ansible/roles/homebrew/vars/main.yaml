@@ -5,6 +5,7 @@ formulas:
   - awscli
   - azure-cli
   - buf
+  - bun
   - coreutils
   - codex
   - ffmpeg
