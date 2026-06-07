@@ -47,6 +47,7 @@ Homebrew でインストールするパッケージ一覧。
 - awscli
 - azure-cli
 - buf
+- bun
 - coreutils
 - codex
 - ffmpeg
