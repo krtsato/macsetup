@@ -42,6 +42,7 @@ Homebrew でインストールするパッケージ一覧。
 ### Formulae
 
 - actionlint
+- ansible
 - argocd
 - aws-sam-cli
 - awscli
@@ -49,24 +50,24 @@ Homebrew でインストールするパッケージ一覧。
 - buf
 - bun
 - coreutils
-- codex
 - ffmpeg
-- gemini-cli
 - gh
 - git
 - helm
 - jq
 - k9s
-- kubectl
+- kubernetes-cli
 - kustomize
 - minikube
 - mise
+- mongodb-database-tools
+- mongosh
 - mysql
 - packer
-- postgresql
+- poppler
+- pup
 - redis
 - starship
-- sqlite
 - watch
 - yamlfmt
 - yamllint
@@ -78,13 +79,16 @@ Homebrew でインストールするパッケージ一覧。
 - 1password
 - appcleaner
 - aws-vpn-client
+- chatgpt
+- claude
 - claude-code
-- cmux
+- codex
 - deepl
 - discord
 - displaylink
 - docker-desktop
 - elgato-game-capture-hd
+- figma
 - firefox
 - font-fira-code-nerd-font
 - font-hack-nerd-font
@@ -95,7 +99,6 @@ Homebrew でインストールするパッケージ一覧。
 - karabiner-elements
 - kiro-cli
 - loopback
-- mongosh
 - ngrok
 - notion
 - notion-calendar
@@ -107,7 +110,6 @@ Homebrew でインストールするパッケージ一覧。
 - tunnelblick
 - visual-studio-code
 - visual-studio-code@insiders
-- zoom
 
 ## Development Environment
 
