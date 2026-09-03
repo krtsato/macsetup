@@ -43,7 +43,7 @@ macsetup/
 │   ├── exec.yaml               # メインプレイブック
 │   ├── hosts                   # localhost のみ
 │   └── roles/                  # 8 ロール（実行順序は exec.yaml 参照）
-│       ├── dotfiles_repo/      # dotfiles リポジトリの clone/pull
+│       ├── dotfiles_repo/      # dotfiles リポジトリの clone/pull + hooks 設定
 │       ├── homebrew/           # Brewfile によるパッケージ管理
 │       ├── macos/              # macOS システム設定
 │       ├── dotfiles/           # シンボリックリンク作成

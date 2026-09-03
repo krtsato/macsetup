@@ -23,7 +23,7 @@ npx markdownlint-cli2 --config ~/dev/me/dotfiles/.markdownlint.yaml <file>
 
 ### Ansible ロール実行順序
 
-1. **dotfiles_repo** — `~/dev/me/dotfiles` を clone/pull
+1. **dotfiles_repo** — `~/dev/me/dotfiles` を clone/pull → コミット前の認証情報検査 (`core.hooksPath`) を設定
 2. **homebrew** — `~/dev/me/dotfiles/brewfile.me` から `brew bundle` でインストール → dump で同期
 3. **macos** — `osx_defaults` / NVRAM でシステム設定
 4. **dotfiles** — `link-symbolic-dotfiles.sh` でシンボリックリンク作成

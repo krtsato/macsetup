@@ -54,6 +54,7 @@ Homebrew でインストールするパッケージ一覧。
 - ffmpeg
 - gh
 - git
+- gitleaks
 - helm
 - jq
 - k9s
@@ -159,6 +160,17 @@ cd ~/dev/me/macsetup
 ```
 
 （プレイブックでは `SKIP_CONFIRM=1` で非対話実行しているため、手動実行時はプロンプトに従ってください）
+
+コミット前に認証情報の混入を検査する仕組みを有効化する。
+`core.hooksPath` は git のローカル設定でリポジトリに含まれないため、マシンごとの設定が必要になる。
+プレイブックでは `dotfiles_repo` ロールが自動で設定するので、手動実行は不要。
+
+```sh
+git -C ~/dev/me/dotfiles config --local core.hooksPath .githooks
+```
+
+gitleaks が未導入の場合は dotfiles でのコミットが失敗する。検査を黙って飛ばさないための挙動で、
+gitleaks は Homebrew で導入されるため通常は問題にならない。
 
 ### Global Install
 

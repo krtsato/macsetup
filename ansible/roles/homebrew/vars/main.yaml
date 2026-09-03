@@ -12,6 +12,7 @@ formulas:
   - ffmpeg
   - gh
   - git
+  - gitleaks
   - helm
   - jq
   - k9s

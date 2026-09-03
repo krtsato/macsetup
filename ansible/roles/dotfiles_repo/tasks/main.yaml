@@ -21,3 +21,19 @@
   register: dotfiles_repo
   changed_when: "'Cloning into' in (dotfiles_repo.stdout + dotfiles_repo.stderr) or 'Updating' in (dotfiles_repo.stdout + dotfiles_repo.stderr) or 'Fast-forward' in (dotfiles_repo.stdout + dotfiles_repo.stderr)"
   failed_when: dotfiles_repo.rc != 0
+
+- name: Ensure dotfiles pre-commit credential scan is enabled
+  ansible.builtin.shell: |
+    repo=~/dev/me/dotfiles
+    current=$(git -C "$repo" config --local --get core.hooksPath)
+    if [ "$current" = ".githooks" ]; then
+      echo "hooksPath already set"
+    else
+      git -C "$repo" config --local core.hooksPath .githooks
+      echo "hooksPath configured"
+    fi
+  environment:
+    PATH: /opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin
+  register: dotfiles_hooks_path
+  changed_when: "'hooksPath configured' in dotfiles_hooks_path.stdout"
+  failed_when: dotfiles_hooks_path.rc != 0
