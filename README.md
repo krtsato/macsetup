@@ -79,7 +79,8 @@ Ansible の `github` ロールが gh ログイン状態の確認と SSH 鍵作�
 | 5    | `github`        | gh ログイン確認 → `setup-github-ssh.sh` で鍵登録                                                                                                                                                                                                                                       |
 | 6    | `mise`          | `./scripts/install-mise-tools.sh`                                                                                                                                                                                                                                                      |
 | 7    | `go`            | Go ツールを `go install`（mise shims を PATH に含めて実行）                                                                                                                                                                                                                            |
-| 8    | `vscode`        | `./scripts/install-vscode-extensions.sh`                                                                                                                                                                                                                                               |
+| 8    | `npm`           | npm グローバルパッケージを `npm install -g`（mise shims を PATH に含めて実行）。textlint は Homebrew に formula がないため npm で導入する                                                                                                                                              |
+| 9    | `vscode`        | `./scripts/install-vscode-extensions.sh`                                                                                                                                                                                                                                               |
 
 補足: Brewfile は dotfiles リポジトリで管理し、`link-symbolic-dotfiles.sh` が `~/brewfile.me` へリンクします。プレイブック内のシェルは必要最小限の PATH で実行する設計です。
 

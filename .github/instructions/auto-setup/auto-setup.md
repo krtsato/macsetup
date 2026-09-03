@@ -49,6 +49,7 @@ Homebrew でインストールするパッケージ一覧。
 - azure-cli
 - buf
 - bun
+- cocoapods
 - coreutils
 - ffmpeg
 - gh
@@ -68,7 +69,9 @@ Homebrew でインストールするパッケージ一覧。
 - pup
 - redis
 - starship
+- uv
 - watch
+- xcodes
 - yamlfmt
 - yamllint
 - zsh
@@ -161,6 +164,8 @@ cd ~/dev/me/macsetup
 
 mise tools をインストール。
 
+Flutter など `~/dev/me/dotfiles/mise/config.toml` に定義した開発ツールは、この手順でインストールする。Flutter は Homebrew では管理しない。
+
 ```sh
 ./scripts/install-mise-tools.sh
 ```
@@ -173,6 +178,14 @@ go install github.com/golangci/golangci-lint/cmd/golangci-lint@latest
 go install go.uber.org/mock/mockgen@latest
 go install golang.org/x/tools/gopls@latest
 go install github.com/deepmap/oapi-codegen/v2/cmd/oapi-codegen@latest
+```
+
+npm グローバルパッケージをインストール。
+
+textlint は Homebrew に formula がないため npm で導入する。ルールプリセットは textlint と同じ prefix に入れないと解決できないため、1 回の `npm install` にまとめて渡す。
+
+```sh
+npm install -g textlint @textlint-ja/textlint-rule-preset-ai-writing
 ```
 
 VSCode Extensions をインストール。

@@ -47,6 +47,7 @@ link_dotfiles() {
     [.gitignore.global]=~/.gitignore.global
     [.mcp.json]=~/.mcp.json
     [.npmrc]=~/.npmrc
+    [.textlintrc.json]=~/.textlintrc.json
     [.vscode_extensions_list]=~/.vscode/.vscode_extensions_list
     [.vscode_extensions_list_insiders]=~/.vscode-insiders/.vscode_extensions_list_insiders
     [.zcompdump]=~/.zcompdump

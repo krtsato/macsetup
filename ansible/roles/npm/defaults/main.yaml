@@ -1,0 +1,7 @@
+# npm でグローバルインストールするパッケージ。
+# textlint は Homebrew に formula がないため npm で入れる。
+# ルールプリセットは textlint と同じ prefix に入れないと解決できないため、
+# 1 回の npm install にまとめて渡す。
+npm_install_targets:
+  - textlint
+  - "@textlint-ja/textlint-rule-preset-ai-writing"

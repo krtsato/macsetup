@@ -30,7 +30,8 @@ npx markdownlint-cli2 --config ~/dev/me/dotfiles/.markdownlint.yaml <file>
 5. **github** — `gh auth` 確認 + SSH 鍵生成・登録
 6. **mise** — `install-mise-tools.sh` で言語ツールインストール
 7. **go** — `go install` でバイナリインストール
-8. **vscode** — `install-vscode-extensions.sh` で拡張機能インストール
+8. **npm** — `npm install -g` でグローバルパッケージインストール（textlint 等）
+9. **vscode** — `install-vscode-extensions.sh` で拡張機能インストール
 
 ### dotfiles リポジトリとの関係
 
