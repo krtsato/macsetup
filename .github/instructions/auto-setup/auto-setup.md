@@ -87,6 +87,7 @@ Homebrew でインストールするパッケージ一覧。
 - claude
 - claude-code
 - codex
+- copilot-cli
 - deepl
 - discord
 - displaylink
