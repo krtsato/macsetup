@@ -1,0 +1,2 @@
+nightly_launcher_repo: "{{ lookup('env', 'HOME') }}/dev/me/watcher"
+nightly_launcher_label: com.krtsato.watcher.nightly-launcher

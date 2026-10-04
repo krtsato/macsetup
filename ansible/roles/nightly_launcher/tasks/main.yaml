@@ -1,0 +1,59 @@
+# One LaunchAgent per slot, generated from the watcher repo's plan.json so that
+# adding a slot there is the only edit needed.
+
+- name: Ensure watcher repository is present
+  ansible.builtin.shell: |
+    if [ -d "{{ nightly_launcher_repo }}/.git" ]; then
+      git -C "{{ nightly_launcher_repo }}" pull --ff-only
+    else
+      gh repo clone krtsato/watcher "{{ nightly_launcher_repo }}"
+    fi
+  environment:
+    PATH: /opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin
+  register: watcher_repo
+  changed_when: "'Cloning into' in (watcher_repo.stdout + watcher_repo.stderr) or 'Fast-forward' in watcher_repo.stdout"
+  failed_when: watcher_repo.rc != 0
+
+- name: Ensure launcher directories exist
+  ansible.builtin.file:
+    path: "{{ item }}"
+    state: directory
+    mode: "0755"
+  loop:
+    - "{{ nightly_launcher_repo }}/.launcher"
+    - "{{ lookup('env', 'HOME') }}/Library/LaunchAgents"
+
+- name: Read the launcher plan
+  ansible.builtin.slurp:
+    src: "{{ nightly_launcher_repo }}/cmd/nightly-launcher/plan.json"
+  register: nightly_launcher_plan
+
+- name: Install a launch agent per slot
+  ansible.builtin.template:
+    src: launchagent.plist.j2
+    dest: "{{ lookup('env', 'HOME') }}/Library/LaunchAgents/{{ nightly_launcher_label }}.{{ slot.name }}.plist"
+    mode: "0644"
+  loop: "{{ (nightly_launcher_plan.content | b64decode | from_json).slots }}"
+  loop_control:
+    loop_var: slot
+    label: "{{ slot.name }}"
+  register: nightly_launcher_agents
+
+# Per slot, so that editing one does not restart the other -- which could be
+# running -- and so that a bootstrap that failed last time is retried.
+- name: Load the launch agents
+  ansible.builtin.shell: |
+    set -e
+    label="{{ nightly_launcher_label }}.{{ item.slot.name }}"
+    if [ "{{ item.changed }}" = "False" ] && launchctl print "gui/$UID/$label" >/dev/null 2>&1; then
+      echo "already loaded"
+      exit 0
+    fi
+    launchctl bootout "gui/$UID/$label" 2>/dev/null || true
+    launchctl bootstrap "gui/$UID" "{{ item.dest }}"
+    echo "loaded"
+  loop: "{{ nightly_launcher_agents.results }}"
+  loop_control:
+    label: "{{ item.slot.name }}"
+  register: nightly_launcher_load
+  changed_when: "nightly_launcher_load.stdout == 'loaded'"
