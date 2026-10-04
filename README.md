@@ -81,7 +81,26 @@ Ansible の `github` ロールが gh ログイン状態の確認と SSH 鍵作�
 | 7 | `go` | Go ツールを `go install`（mise shims を PATH に含めて実行） |
 | 8 | `npm` | npm グローバルパッケージを `npm install -g`（mise shims を PATH に含めて実行）。textlint は Homebrew に formula がないため npm で導入する |
 | 9 | `vscode` | `./scripts/install-vscode-extensions.sh` |
-| 10 | `nightly_launcher` | `krtsato/watcher` を取得し、その `plan.json` の枠ごとに LaunchAgent を生成して登録。投資のパイプラインを深夜に起こす（GitHub の定期実行は数時間遅れるため） |
+| 10 | `nightly_launcher` | `krtsato/watcher` を取得し、その `plan.json` の枠ごとに LaunchAgent を生成して登録 |
+
+### 夜の起動（`nightly_launcher`）
+
+投資のパイプラインは、GitHub の定期実行ではなく**この Mac から**決まった時刻に起こします
+（GitHub の予定は 12 分〜10 時間遅れ、時刻を選べないため）。つまり **Mac の設定がパイプラインの一部**で、
+買い替えて設定を忘れると夜が丸ごと消えます。
+
+| | |
+| --- | --- |
+| **時刻と順序の正本** | **`krtsato/watcher` の `cmd/nightly-launcher/plan.json`**。ここには書きません |
+| この役がすること | その `plan.json` を読み、**枠ごとに** LaunchAgent を生成して登録する |
+| 設計と運用 | [watcher の docs/launcher.md](https://github.com/krtsato/watcher/blob/main/docs/launcher.md) |
+
+**正本をここに置かないのは、2 か所に書けば必ず片方が古くなるからです。** 時刻・順序・依存・曜日は
+起動役のコードが解釈するものなので、そのコードの隣に置いています。
+
+**`plan.json` を変えたら `make playbook` を流してください。** LaunchAgent は設定時に書き出されるので、
+流し忘れると Mac は古い時刻で起き、起動役は「枠の時刻から離れすぎています」と言って**毎晩何もしません**。
+見張り（`krtsato/watcher`）が数日後に報告しますが、気づくのは遅れます。
 
 補足: Brewfile は dotfiles リポジトリで管理し、`link-symbolic-dotfiles.sh` が `~/brewfile.me` へリンクします。プレイブック内のシェルは必要最小限の PATH で実行する設計です。
 
