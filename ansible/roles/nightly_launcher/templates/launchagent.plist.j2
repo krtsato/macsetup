@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<plist version="1.0">
+<dict>
+  <key>Label</key><string>{{ nightly_launcher_label }}.{{ slot.name }}</string>
+  <key>ProgramArguments</key>
+  <array>
+    <string>/usr/bin/caffeinate</string>
+    <string>-i</string>
+    <string>{{ nightly_launcher_repo }}/scripts/nightly-launcher.sh</string>
+    <string>{{ slot.name }}</string>
+  </array>
+  <key>StartCalendarInterval</key>
+  <dict>
+    <key>Hour</key><integer>{{ slot.at.split(':')[0] | int }}</integer>
+    <key>Minute</key><integer>{{ slot.at.split(':')[1] | int }}</integer>
+  </dict>
+  <key>WorkingDirectory</key><string>{{ nightly_launcher_repo }}</string>
+  <key>EnvironmentVariables</key>
+  <dict>
+    <key>PATH</key><string>{{ lookup('env', 'HOME') }}/.local/share/mise/shims:/opt/homebrew/bin:/usr/bin:/bin:/usr/sbin:/sbin</string>
+  </dict>
+  <key>StandardOutPath</key><string>{{ nightly_launcher_repo }}/.launcher/{{ slot.name }}.out.log</string>
+  <key>StandardErrorPath</key><string>{{ nightly_launcher_repo }}/.launcher/{{ slot.name }}.err.log</string>
+  <key>RunAtLoad</key><false/>
+</dict>
+</plist>

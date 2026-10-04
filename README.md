@@ -70,17 +70,18 @@ Ansible の `github` ロールが gh ログイン状態の確認と SSH 鍵作�
 
 ## Ansible ロールの流れ
 
-| 順序 | ロール          | 役割                                                                                                                                                                                                                                                                                   |
-| ---- | --------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| 1    | `dotfiles_repo` | `~/dev/me/dotfiles` を clone/pull（Brewfile 取得含む）                                                                                                                                                                                                                                 |
-| 2    | `homebrew`      | Brewfile でインストール → 同ファイルに dump                                                                                                                                                                                                                                            |
-| 3    | `macos`         | `osx_defaults` で macOS 設定適用（ダークモード固定、キーリピート高速(InitialKeyRepeat=13/KeyRepeat=1)、トラックパッド速度最速、Dock アプリ初期化、Finder 表示(隠しファイル/拡張子/ステータスバー/パスバー)、バッテリー残量表示、スクショ保存設定(名前img/日付なし/~/Desktop/tmp)など） |
-| 4    | `dotfiles`      | `./scripts/link-symbolic-dotfiles.sh` を非対話実ｓ>行                                                                                                                                                                                                                                  |
-| 5    | `github`        | gh ログイン確認 → `setup-github-ssh.sh` で鍵登録                                                                                                                                                                                                                                       |
-| 6    | `mise`          | `./scripts/install-mise-tools.sh`                                                                                                                                                                                                                                                      |
-| 7    | `go`            | Go ツールを `go install`（mise shims を PATH に含めて実行）                                                                                                                                                                                                                            |
-| 8    | `npm`           | npm グローバルパッケージを `npm install -g`（mise shims を PATH に含めて実行）。textlint は Homebrew に formula がないため npm で導入する                                                                                                                                              |
-| 9    | `vscode`        | `./scripts/install-vscode-extensions.sh`                                                                                                                                                                                                                                               |
+| 順序 | ロール | 役割 |
+| --- | --- | --- |
+| 1 | `dotfiles_repo` | `~/dev/me/dotfiles` を clone/pull（Brewfile 取得含む） |
+| 2 | `homebrew` | Brewfile でインストール → 同ファイルに dump |
+| 3 | `macos` | `osx_defaults` で macOS 設定適用（ダークモード固定、キーリピート高速(InitialKeyRepeat=13/KeyRepeat=1)、トラックパッド速度最速、Dock アプリ初期化、Finder 表示(隠しファイル/拡張子/ステータスバー/パスバー)、バッテリー残量表示、スクショ保存設定(名前img/日付なし/~/Desktop/tmp)など） |
+| 4 | `dotfiles` | `./scripts/link-symbolic-dotfiles.sh` を非対話実ｓ>行 |
+| 5 | `github` | gh ログイン確認 → `setup-github-ssh.sh` で鍵登録 |
+| 6 | `mise` | `./scripts/install-mise-tools.sh` |
+| 7 | `go` | Go ツールを `go install`（mise shims を PATH に含めて実行） |
+| 8 | `npm` | npm グローバルパッケージを `npm install -g`（mise shims を PATH に含めて実行）。textlint は Homebrew に formula がないため npm で導入する |
+| 9 | `vscode` | `./scripts/install-vscode-extensions.sh` |
+| 10 | `nightly_launcher` | `krtsato/watcher` を取得し、その `plan.json` の枠ごとに LaunchAgent を生成して登録。投資のパイプラインを深夜に起こす（GitHub の定期実行は数時間遅れるため） |
 
 補足: Brewfile は dotfiles リポジトリで管理し、`link-symbolic-dotfiles.sh` が `~/brewfile.me` へリンクします。プレイブック内のシェルは必要最小限の PATH で実行する設計です。
 
