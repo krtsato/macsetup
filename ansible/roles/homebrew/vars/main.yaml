@@ -64,6 +64,7 @@ casks:
   - ngrok
   - notion
   - notion-calendar
+  - obsidian
   - postman
   - raycast
   - slack

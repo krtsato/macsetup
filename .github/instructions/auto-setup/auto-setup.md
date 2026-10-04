@@ -107,6 +107,7 @@ Homebrew でインストールするパッケージ一覧。
 - ngrok
 - notion
 - notion-calendar
+- obsidian
 - postman
 - raycast
 - slack
