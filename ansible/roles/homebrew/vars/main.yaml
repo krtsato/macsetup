@@ -13,6 +13,7 @@ formulas:
   - gh
   - git
   - gitleaks
+  - googleworkspace-cli
   - helm
   - jq
   - k9s
