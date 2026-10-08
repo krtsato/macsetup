@@ -49,6 +49,9 @@ npx markdownlint-cli2 --config ~/dev/me/dotfiles/.markdownlint.yaml <file>
 
 **いずれもアルファベット順。** 1 つだけ直すと、残りが黙って古くなる。
 
+**書くのはコマンド名ではなく formula 名。** 両者が違うものがある。たとえば Google Workspace の `gws` は
+`googleworkspace-cli` で入れる。`brew install gws` は git リポジトリをまとめて扱う別の道具で、同じ `gws` を入れて衝突する。
+
 ## 夜の起動 — 正本は watcher にある
 
 投資のパイプラインは GitHub の定期実行ではなく**この Mac から**起こす（GitHub の予定は 12 分〜10 時間遅れ、

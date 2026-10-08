@@ -122,6 +122,7 @@ CLI では変更できない、または sudo 権限が必要な項目は GUI �
 | Microsoft Office       | インストール                                                                                                               |
 | 旧 PC からのデータ移行 | 経理書類など                                                                                                               |
 | GitHub ブラウザ認証    | `gh auth login` はブラウザ操作が必要。未ログインだと `github` ロールが停止するので先に完了する                             |
+| Google Workspace 認証  | `gws auth login` はブラウザ操作と OAuth クライアントが必要。gcloud の ADC への権限追加は会社アカウントでは拒否される       |
 | Touch ID               | 指紋を追加（System Settings > Touch ID & Password）                                                                        |
 | 入力ソース             | Google 日本語入力を有効化し、英字/かな切替を設定（System Settings > Keyboard > Input Sources）                             |
 | Terminal フォント      | Terminal.app のプロファイルで VSCode の settings.json と同等の Nerd Font（例: FiraCodeNerdFontCompleteM-Retina）を手動設定 |
