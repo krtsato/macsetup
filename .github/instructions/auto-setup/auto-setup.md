@@ -53,6 +53,7 @@ Homebrew でインストールするパッケージ一覧。
 - coreutils
 - ffmpeg
 - gh
+- ghostscript
 - git
 - gitleaks
 - helm
