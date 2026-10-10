@@ -55,6 +55,7 @@ Homebrew でインストールするパッケージ一覧。
 - gh
 - git
 - gitleaks
+- ghostscript
 - helm
 - jq
 - k9s
