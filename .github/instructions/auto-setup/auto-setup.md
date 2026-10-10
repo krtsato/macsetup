@@ -54,8 +54,8 @@ Homebrew でインストールするパッケージ一覧。
 - ffmpeg
 - gh
 - git
-- gitleaks
 - ghostscript
+- gitleaks
 - helm
 - jq
 - k9s
