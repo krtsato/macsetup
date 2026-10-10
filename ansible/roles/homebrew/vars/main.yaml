@@ -11,8 +11,8 @@ formulas:
   - coreutils
   - ffmpeg
   - gh
-  - git
   - ghostscript
+  - git
   - gitleaks
   - helm
   - jq
