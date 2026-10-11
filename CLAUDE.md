@@ -24,6 +24,10 @@ make secrets-import IMAGE=<絶対パス.dmg>
 make secrets-restore IMAGE=<絶対パス.dmg>
 make secrets-recover   # 強制終了で止まった import・restore の跡を配置前へ戻す
 
+# 切り替え（段 6。手順書は docs/cutover.md。どちらも読むだけ）
+make cutover-trial                                  # 試し実行の gh workflow run を出す（起動はしない）
+make cutover-check SINCE=<YYYY-MM-DD> RUNNERS=<新端末の実行役の名前,… または末尾>   # 完了の一覧 21 単位の判定
+
 # Markdown lint（編集後に必ず）
 npx markdownlint-cli2 --config ~/dev/me/dotfiles/.markdownlint.yaml <file>
 ```
@@ -105,6 +109,20 @@ make playbook EXTRA_VARS='runners_enabled=true nightly_launcher_enabled=true'
 | 登録鍵 | 使い捨て。`no_log: true` で、`config.sh` へ渡すだけ。ファイルにもログにも残さない |
 | 検査 | `scripts/test-nightly-launcher.sh`（起動役の読み込み規則 4 通り）と `scripts/test-runners.sh`（偽の `gh`・`launchctl`・`config.sh` で、登録の引数・鍵が出力に出ないこと・SHA 不一致での失敗・起動が 1 回だけ・online 待ち・版の固定・途中の跡で止まること・登録済みで何もしないことを確かめる） |
 
+## 切り替えの手順書と道具 — 段 6
+
+手順書は [docs/cutover.md](docs/cutover.md)（14 手順・戻し方）。道具は読むだけの 2 本で、起動も書き込みもしない。
+
+| 項目 | 場所・決まり |
+| --- | --- |
+| 共有の部品 | `scripts/cutover-lib.sh`。完了の一覧 = 起動役の予定表（watcher の `cmd/nightly-launcher/plan.json`）の仕事 ＋ 予定表に無い自前実行のワークフロー。実行役を置くリポジトリは `roles/runners/defaults` の `runners_list` から読み、予定表とワークフローは各複製を `git fetch origin main` して **origin/main** から `git show` で読む（作業ツリーは読まない。複製・fetch・workflows の欠けは名指しで失敗。一覧を書き写さない） |
+| `make cutover-trial` | `scripts/cutover-trial.sh`。`dry_run` の入力があれば `dry_run=true`（＋あれば `skip_audio`・`audio_dry_run`・件数=1）、入力が無く全 job の権限が**明示的に**読み取りだけなら入力なし（`permissions` の省略は対象外）。`dry_run` でも副作用が残るもの（`digest-author`・`note-author`・`daily-magazine-sync`・`daily-mediable-sync`・`ledger-sync`）は `cutover_trial_excluded` に理由つきで固定。出すだけ（今は試し実行 11・夜間 7） |
+| `make cutover-check` | `scripts/cutover-check.sh`。各単位が SINCE 以降に新端末の実行役だけで成功したかを、run と**全ページの job** の `runner_name` で判定（空・旧端末の job が 1 つでもあれば数えない）。曜日限定は該当の曜日（日本時間）の run だけ数える。**同じワークフローを共有する単位は GitHub から見分けられない**ので、**1 晩**（各枠の `at`〜`deadline` の窓）に単位数ぶんの新端末での成功があり、窓に新端末での成功以外の run（失敗・取り消し・実行中・旧端末での成功など）が無いときだけ全単位を done にする（別々の晩は足さない。`turnover-snapshot` 3・`daily-mediable-sync` 2）。pending があれば 0 以外で終わる |
+| 検査 | `scripts/test-cutover.sh`（21 単位・試し実行 11 本・夜間 7 本を固定して定義の変化に気づく。判定の論理は偽の `gh`、読み先は一時の git リポジトリ） |
+
+- 完了の判定に**試し実行は入れない**（run に入力は残らず、`dry_run` の成功も数えてしまう）。SINCE は試し実行の翌日にする
+- ワークフローや予定表を意図して変えたら `scripts/test-cutover.sh` の期待を直す
+
 ## 点検 `make doctor`
 
 `ansible/doctor.yaml`（ロール `doctor`）。**読むだけで何も変更しない**（全タスク `changed_when: false`）。`exec.yaml` には入れない。
@@ -172,6 +190,8 @@ make playbook EXTRA_VARS='runners_enabled=true nightly_launcher_enabled=true'
 ```text
 macsetup/
 ├── Makefile                    # オーケストレーション
+├── docs/
+│   └── cutover.md              # 切り替えの手順書（段 6）
 ├── ansible/
 │   ├── exec.yaml               # メインプレイブック（ロールの順序はここ）
 │   ├── doctor.yaml             # 点検プレイブック（読むだけ）
@@ -194,5 +214,5 @@ macsetup/
 │       ├── moomoo/             # OpenD のログ掃除と SDK の image
 │       ├── doctor/             # 点検（exec.yaml には入れない）
 │       └── secrets/            # 秘密の持ち出し・持ち込み（exec.yaml には入れない）
-└── scripts/                    # Ansible から呼び出されるスクリプト群
+└── scripts/                    # Ansible から呼び出されるスクリプト群と、切り替えの道具（cutover-*.sh）
 ```

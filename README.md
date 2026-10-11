@@ -12,6 +12,11 @@
 | 4    | 秘匿ファイルを配置                      | `~/.aws`, `~/.ssh`, `~/.claude.json`, `~/.gitconfig`, `~/.npmrc`, `~/.wakatime.cfg` など                                                     |
 | 5    | ワンコマンド実行                        | `make setup ANSIBLE_FLAGS='--ask-become-pass'`（非対話にしたい場合は `make setup EXTRA_VARS="homebrew_sudo_password=YOUR_PASSWORD"` でも可） |
 
+## 切り替えの手順書
+
+旧い Mac から新しい Mac へ夜間の自動実行を移す手順（14 手順・戻し方つき）は [docs/cutover.md](docs/cutover.md) にあります。
+旧端末を止めて空になったことを確かめてから、新端末の実行役と起動役を起動します。
+
 ## Make タスク
 
 | ターゲット | 目的 | 例 |
@@ -25,6 +30,8 @@
 | `make secrets-import` | イメージの中身を置く（新端末。全部か何もなしか） | `make secrets-import IMAGE=/Volumes/USB/macsetup-secrets.dmg` |
 | `make secrets-restore` | 今ある物を退避して、イメージの中身で置き換える | `make secrets-restore IMAGE=/Volumes/USB/macsetup-secrets.dmg` |
 | `make secrets-recover` | 強制終了で止まった import・restore の跡を配置前へ戻す（冪等） | `make secrets-recover` |
+| `make cutover-trial` | 切り替えの試し実行の `gh workflow run` を出す（出すだけ・読むだけ） | `make cutover-trial` |
+| `make cutover-check` | 完了の一覧 21 単位が新端末の実行役で成功したか判定（読むだけ。pending があれば 0 以外で終わる） | `make cutover-check SINCE=2026-10-15 RUNNERS=<端末名>` |
 | `make help` | 簡易ヘルプ表示 | - |
 
 主要な変数
