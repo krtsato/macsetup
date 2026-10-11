@@ -88,6 +88,11 @@ group_profiles() {
 check_present_entry() {
   local rel="$1" abs="$2" kind="$3" class="$4" mode="$5" children="$6" recursive="$7"
   local c p sub base
+  # 持ち込む実体が一覧の場所にあることを保証するため、リンクは参照先に関係なく不合格
+  if [ -L "${abs}" ]; then
+    fail "${rel}: シンボリックリンクになっている（実体を置くこと）"
+    return
+  fi
   if [ "${kind}" = file ]; then
     [ -f "${abs}" ] || { fail "${rel}: 通常のファイルでない"; return; }
     check_mode "${abs}" "${rel}" "${mode}"
@@ -97,7 +102,9 @@ check_present_entry() {
   check_mode "${abs}" "${rel}" "${mode}"
   if [ "${children}" != "-" ]; then
     for c in $(printf '%s' "${children}" | tr ',' ' '); do
-      if [ -f "${abs}/${c}" ]; then
+      if [ -L "${abs}/${c}" ]; then
+        fail "${rel}/${c}: シンボリックリンクになっている（実体を置くこと）"
+      elif [ -f "${abs}/${c}" ]; then
         check_mode "${abs}/${c}" "${rel}/${c}" 0600
       else
         fail "${rel}/${c}: 必須の ${class} が無い"
@@ -116,6 +123,8 @@ check_present_entry() {
       base="${p##*/}"
       if [ "${base}" = ".DS_Store" ]; then
         warn "${sub}: .DS_Store（除外対象）が混じっている"
+      elif [ -L "${p}" ]; then
+        fail "${sub}: シンボリックリンクになっている（実体を置くこと）"
       elif [ -d "${p}" ]; then
         check_mode "${p}" "${sub}" 0700
       else
@@ -177,7 +186,8 @@ group_clones() {
     url="$(git -C "${dir}" config --get remote.origin.url 2>/dev/null)"
     re="^(https://github\\.com/|git@github\\.com:|ssh://git@github\\.com/)krtsato/${expect}(\\.git)?$"
     if ! [[ "${url}" =~ ${re} ]]; then
-      fail "${key}: origin が krtsato/${expect} でない（${url:-未設定}）"
+      # URL には認証情報が混じりうるので表示しない
+      fail "${key}: origin が krtsato/${expect} でない（${url:+URL は表示しない}${url:-未設定}）"
       continue
     fi
     while IFS=$'\t' read -r kind path used; do
@@ -207,9 +217,9 @@ group_tools() {
   nlm="${home}/$(jin -r '.nlm_path')"
   ver="$(jin -r '.nlm_version')"
   if [ -x "${nlm}" ]; then
-    if ! "${nlm}" --version 2>/dev/null | grep -Fq "${ver}"; then
-      fail "nlm: 版が ${ver} でない（$("${nlm}" --version 2>&1 | head -1)）"
-    fi
+    local got
+    got="$("${nlm}" --version 2>/dev/null | sed -nE 's/^nlm version ([0-9][0-9A-Za-z.+-]*)$/\1/p' | head -1)"
+    [ "${got}" = "${ver}" ] || fail "nlm: 版が ${ver} でない（${got:-読めない}）"
   else
     fail "nlm: ${nlm} が無い"
   fi

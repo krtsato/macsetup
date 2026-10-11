@@ -42,6 +42,18 @@ rc=0
 run_doctor "${tmp}/a.out" -e "$(printf '{"doctor_extra_config_files":[{"path":"%s","kind":"file","class":"auth","mode":"0600","required":true,"purpose":"test"}]}' "${missing}")" || rc=$?
 expect_broken "missing required file" "${tmp}/a.out" "${rc}" "${missing}"
 
+# (i) 秘密の場所がシンボリックリンク（参照先は 0600 の通常ファイル）
+log "(i) 秘密の場所がシンボリックリンク"
+linkdir="${HOME}/.config/doctor-test-symlink"
+mkdir -p "${linkdir}"
+: >"${tmp}/target.json"
+chmod 600 "${tmp}/target.json"
+ln -sf "${tmp}/target.json" "${linkdir}/linked.json"
+rc=0
+run_doctor "${tmp}/i.out" -e '{"doctor_extra_config_files":[{"path":".config/doctor-test-symlink/linked.json","kind":"file","class":"auth","mode":"0600","required":true,"purpose":"test"}]}' || rc=$?
+rm -rf "${linkdir}"
+expect_broken "symlinked secret" "${tmp}/i.out" "${rc}" ".config/doctor-test-symlink/linked.json: シンボリックリンク"
+
 # (b) 存在しない複製のパス
 log "(b) 存在しない複製のパス"
 rc=0
