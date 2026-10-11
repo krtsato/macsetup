@@ -22,6 +22,7 @@ make secrets-list
 make secrets-export OUT=<リポジトリの外の絶対パス.dmg>
 make secrets-import IMAGE=<絶対パス.dmg>
 make secrets-restore IMAGE=<絶対パス.dmg>
+make secrets-recover   # 強制終了で止まった import・restore の跡を配置前へ戻す
 
 # Markdown lint（編集後に必ず）
 npx markdownlint-cli2 --config ~/dev/me/dotfiles/.markdownlint.yaml <file>
@@ -132,9 +133,12 @@ make playbook EXTRA_VARS='runners_enabled=true nightly_launcher_enabled=true'
 | 項目 | 場所・決まり |
 | --- | --- |
 | 一覧の正本 | `roles/doctor/vars/main.yaml` の `doctor_config_files`（複製しない）。`{profile}` は `NOTEBOOKLM_PROFILE` から実行時に展開し、`secrets.sh` の shell 変数の中だけで持つ（出力は `<プロファイル1>` の別名） |
-| 動作 | `list`（表示のみ）/ `export`（旧端末。実行役 5 体・起動役 2 枠が読み込まれていたら拒否）/ `import`（衝突は 1 件でもあれば何も変えない。記録をたどって全部か何もなしか）/ `restore`（退避してから置換） |
+| 動作 | `list`（表示のみ）/ `export`（旧端末。実行役 5 体・起動役 2 枠が読み込まれていたら拒否）/ `import`（衝突は 1 件でもあれば何も変えない。記録をたどって全部か何もなしか）/ `restore`（退避してから置換）/ `recover`（強制終了の跡を戻す） |
+| 復旧 | 変更の前に意図を journal へ書く（書き込み先行）。復旧は実際の状態で各行を判断し冪等。跡（`.macsetup-import.*`）が残る間は import・restore を拒否して `make secrets-recover` を案内 |
+| 停止の確認 | 読み込み済みの label・`.runner` が有るのに `.service` が無い・`bin*/Runner.Listener` が動いている、のどれでも拒否（確かめられなければ止まっているとみなさない） |
+| 出力 | 全出力を別名への置き換えフィルタ経由にする（長い名前から）。道具のエラーのパスにも本物の名前を出さない |
 | 合言葉 | 引数・環境変数で渡さない。`hdiutil` が端末で尋ねる。テスト専用で `SECRETS_TEST_STDINPASS=1`（標準入力の `-stdinpass`） |
-| テスト用の環境変数 | `SECRETS_HOME`・`SECRETS_PROFILES_OVERRIDE`・`SECRETS_PATH_PREFIX`（偽の `launchctl`）・`SECRETS_TEST_FAIL_AFTER`・`SECRETS_TEST_SKIP_DOCTOR` |
+| テスト用の環境変数 | `SECRETS_HOME`・`SECRETS_PROFILES_OVERRIDE`・`SECRETS_PATH_PREFIX`（偽の `launchctl`）・`SECRETS_TEST_FAIL_AFTER`・`SECRETS_TEST_SKIP_DOCTOR`・`SECRETS_TEST_KILL_AFTER_MOVE` |
 | 壊して確かめる | `scripts/test-secrets.sh`（往復・衝突・途中の失敗・許可外・拒否・restore・取り外し・擬似端末での対話入力・出力に名前や中身が出ないこと） |
 
 - **公開リポジトリなので**イメージ・秘密・ハッシュ・プロファイル名をコミットしない。イメージはリポジトリの外、権限 0600

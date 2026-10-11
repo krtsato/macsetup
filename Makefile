@@ -12,7 +12,7 @@ GITHUB_EMAIL ?=
 SSH_KEY_ARGS := $(if $(filter ed25519,$(SSH_KEY_TYPE)),,-t $(SSH_KEY_TYPE))
 GITHUB_EMAIL_ARG := $(if $(GITHUB_EMAIL), $(GITHUB_EMAIL),)
 
-.PHONY: setup bootstrap playbook doctor secrets-list secrets-export secrets-import secrets-restore github-ssh help
+.PHONY: setup bootstrap playbook doctor secrets-list secrets-export secrets-import secrets-restore secrets-recover github-ssh help
 
 setup: bootstrap playbook
 
@@ -63,6 +63,10 @@ secrets-restore:
 	@test -n "$(IMAGE)" || { echo "IMAGE=<イメージの絶対パス.dmg> を指定してください" >&2; exit 2; }
 	@$(call secrets_run,restore,"$(abspath $(IMAGE))")
 
+# 強制終了などで import・restore が途中で止まった跡を、記録と実際の状態から配置前へ戻す（やり直しても同じ結果）
+secrets-recover:
+	@$(call secrets_run,recover,)
+
 github-ssh:
 	./scripts/setup-github-ssh.sh $(SSH_KEY_ARGS) $(GITHUB_EMAIL_ARG)
 
@@ -75,4 +79,5 @@ help:
 	@echo "secrets-export   OUT=<abs path.dmg>  Encrypt secrets and state records into a disk image"
 	@echo "secrets-import   IMAGE=<abs path.dmg>  Place them on the new Mac (all or nothing), then doctor"
 	@echo "secrets-restore  IMAGE=<abs path.dmg>  Back up what exists, then replace with the image"
+	@echo "secrets-recover  Undo a half-finished import/restore left by a crash (idempotent)"
 	@echo "github-ssh  Run setup-github-ssh.sh (override with SSH_KEY_TYPE/GITHUB_EMAIL)"

@@ -24,6 +24,7 @@
 | `make secrets-export` | 秘密と記録を暗号化イメージへ（旧端末） | `make secrets-export OUT=$HOME/Desktop/macsetup-secrets.dmg` |
 | `make secrets-import` | イメージの中身を置く（新端末。全部か何もなしか） | `make secrets-import IMAGE=/Volumes/USB/macsetup-secrets.dmg` |
 | `make secrets-restore` | 今ある物を退避して、イメージの中身で置き換える | `make secrets-restore IMAGE=/Volumes/USB/macsetup-secrets.dmg` |
+| `make secrets-recover` | 強制終了で止まった import・restore の跡を配置前へ戻す（冪等） | `make secrets-recover` |
 | `make help` | 簡易ヘルプ表示 | - |
 
 主要な変数
@@ -180,6 +181,7 @@ make secrets-list                                         # 運ぶ物を確か�
 make secrets-export OUT=$HOME/Desktop/macsetup-secrets.dmg  # 旧端末。OUT は絶対パスの .dmg で、まだ無いこと
 make secrets-import IMAGE=/Volumes/USB/macsetup-secrets.dmg # 新端末。最後に make doctor PHASE=cutover を流す
 make secrets-restore IMAGE=/Volumes/USB/macsetup-secrets.dmg # 旧端末へ戻すとき
+make secrets-recover                                      # import・restore が強制終了などで途中で止まったとき
 scripts/test-secrets.sh                                   # 偽のホームでの検査
 ```
 
@@ -193,20 +195,25 @@ scripts/test-secrets.sh                                   # 偽のホームで�
 
 | 命令 | 動き |
 | --- | --- |
-| `export` | **実行役 5 体と起動役 2 枠が launchd に読み込まれていないこと**を確かめてから、一覧を集める。必須の物が欠けていたり、出力先がリポジトリの中・既に存在するときは何も作らず止まる。件数の目録 `MANIFEST.json` をイメージの中に入れる |
-| `import` | イメージを読み取り専用で取り付け、目録と中身の一致と許可一覧の外の物が無いことを検査する。**衝突（置き先に既に在る物）を先にまとめて調べ、1 件でもあれば何も変えずに止まる**。ホーム直下の一時の置き場へ写して件数と権限を検査し、1 項目ずつ置きながら記録に書く。途中で失敗したら記録をたどって配置前へ戻す。イメージは成功でも失敗でも必ず取り外す。最後に `make doctor PHASE=cutover` を流し、その終了コードを返す |
+| `export` | **実行役 5 体と起動役 2 枠が止まっていること**を確かめてから（launchd に読み込まれていない・`.runner` が有るのに `.service` が無く確かめられない場合は拒否・`bin*/Runner.Listener` の process が動いていれば拒否。確かめられないときは止まっているとみなさない）、一覧を集める。必須の物が欠けていたり、出力先がリポジトリの中・既に存在するときは何も作らず止まる。件数の目録 `MANIFEST.json` をイメージの中に入れる |
+| `import` | イメージを読み取り専用で取り付け、目録と中身の一致・許可一覧の外の物が無いこと・**必須の項目（必須の子ファイルを含む）が全部あること**（任意の物は無くてよい）を検査する。**衝突（置き先に既に在る物）を先にまとめて調べ、1 件でもあれば何も変えずに止まる**。ホーム直下の一時の置き場へ写して件数と権限を検査し、**変更の前に意図を記録（書き込み先行）してから**1 項目ずつ置く。途中で失敗したら記録と実際の状態から配置前へ戻す。イメージは成功でも失敗でも必ず取り外し、**取り外せなければ取り付け先を表示して止まり、取り付けたまま配置しない**。最後に `make doctor PHASE=cutover` を流し、その終了コードを返す |
 | `restore` | `import` と同じ検査の後、置き先に在る物を `~/.macsetup-restore-backup-<日時>`（0700）へ退避してから置く。失敗したら退避した物を戻す。実行役・起動役が停止していることも要る |
 
 運ばない物: **Claude と gh のログインはキーチェーンにあり、ファイルとして運べません**。新端末で手でログインし直します
 （段 6）。watcher の `.launcher/state-*.json`（起動役の再開記録）も運びません。**切り替えは全枠が完了してからだけ**にします。
 移行前の写し・`.local/`・`mcp-mediable/captions/` など、許可一覧に無い物も運びません。
 
-`import` の途中で process が強制終了されたときは、ホーム直下の `.macsetup-import.*/journal` に配置の記録が残ります。
-`placed` の行の物を消し、`backed` の行の物を元へ戻してください。
+**強制終了（kill -9・停電など）で止まったとき**: ホーム直下に `.macsetup-import.*`（一時の置き場と記録）が残ります。
+残っている間は `import`・`restore` が「前回の途中で止まった跡がある」と言って拒否します。
+`make secrets-recover` を実行してください。記録（書き込み先行）と、実際に在る物を突き合わせて、置いた物を消し、
+退避した物を元へ戻します（やり直しても同じ結果。実行中の process が使っている置き場には触らない）。
+戻せない行（元の場所と退避先の両方に物が在るなど）があれば、件数と記録の場所を表示して失敗します。手で直してください。
+
+出力には本物のプロファイル名を出しません。`cp`・`mv`・`hdiutil` などの道具のエラーも、別名（長い名前から置き換え）を通して表示します。
 
 テスト専用の環境変数（`make` へ渡す。実運用では使わない）: `SECRETS_HOME`・`SECRETS_PROFILES_OVERRIDE`（JSON の配列）・
 `SECRETS_PATH_PREFIX`（偽の `launchctl`）・`SECRETS_TEST_STDINPASS=1`（合言葉を標準入力から `-stdinpass` で渡す）・
-`SECRETS_TEST_FAIL_AFTER`・`SECRETS_TEST_SKIP_DOCTOR`。`scripts/test-secrets.sh` は同じ `make secrets-*` を流し、
+`SECRETS_TEST_FAIL_AFTER`・`SECRETS_TEST_SKIP_DOCTOR`・`SECRETS_TEST_KILL_AFTER_MOVE`（N 回目の mv の直後に SIGKILL）。`scripts/test-secrets.sh` は同じ `make secrets-*` を流し、
 擬似端末（`script`）で対話の合言葉入力も確かめます。
 
 ## 手動作業
