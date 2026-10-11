@@ -123,17 +123,19 @@ macsetup/
 │   ├── exec.yaml               # メインプレイブック（ロールの順序はここ）
 │   ├── doctor.yaml             # 点検プレイブック（読むだけ）
 │   ├── hosts                   # localhost のみ
-│   └── roles/                  # 11 ロール
+│   └── roles/                  # 13 ロール
 │       ├── dotfiles_repo/      # dotfiles の clone/pull + hooks 設定
 │       ├── homebrew/           # Brewfile によるパッケージ管理
 │       ├── macos/              # macOS システム設定
 │       ├── dotfiles/           # シンボリックリンク作成
 │       ├── github/             # GitHub CLI 認証 + SSH 鍵
 │       ├── mise/               # 言語ツール
+│       ├── uv_tools/           # 版を固定した uv の道具（nlm）
 │       ├── go/                 # Go バイナリ
 │       ├── npm/                # グローバルパッケージ
 │       ├── vscode/             # VSCode 拡張機能
 │       ├── nightly_launcher/   # 夜の起動の LaunchAgent
+│       ├── moomoo/             # OpenD のログ掃除と SDK の image
 │       └── doctor/             # 点検（exec.yaml には入れない）
 └── scripts/                    # Ansible から呼び出されるスクリプト群
 ```
