@@ -8,9 +8,9 @@
 
 ## 使い方
 
-点検には 3 つの場面があり、`PHASE` で選びます（既定は `ready`）。
+点検には 3 つの `PHASE` があり、切り替えのどの時点かで選びます（既定は `ready`）。
 
-| 場面 `PHASE` | いつ使うか | 命令 |
+| `PHASE` | いつ使うか | 命令 |
 | --- | --- | --- |
 | `ready`（稼働） | 普段。夜間の自動実行が動いている状態 | `make doctor` |
 | `pre-import`（持ち込み前） | 旧い Mac から秘密と記録を持ち込む前 | `make doctor PHASE=pre-import` |
@@ -28,9 +28,9 @@
 | ログイン | `gh`・管理者権限・`codex`・`claude`・NotebookLM（終了コードだけを見る）。`gh`・`claude`・`codex` は runner と同じ環境（`env -i` と runner の `.path`）でも 1 回確かめる |
 | GitHub 側 | 移行に必須の秘密と変数（名前の有無だけ。全設定の棚卸しではない。秘密 6 組は「移行に必須の組」） |
 | runner と夜間の起動 | `.path` の先頭が mise の shims・`SessionCreate=false`・停止/online・LaunchAgent の読み込み |
-| OpenD（moomoo の API ゲートウェイ） | `127.0.0.1:11111`。`ready` では土曜 01:30〜月曜 01:30 以外は失敗、その間と他の場面は警告（日本時間。`DOCTOR_NOW` / `doctor_now` で「いま」を上書きできる） |
+| OpenD（moomoo の API ゲートウェイ） | `127.0.0.1:11111`。`ready` では土曜 01:30〜月曜 01:30 以外は失敗、その間と他の PHASE では警告（日本時間。`DOCTOR_NOW` / `doctor_now` で「いま」を上書きできる） |
 
-## 場面ごとの期待
+## PHASE ごとの期待
 
 | 項目 | `pre-import` | `cutover` | `ready` |
 | --- | --- | --- | --- |

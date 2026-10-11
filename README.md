@@ -71,7 +71,7 @@ make setup ANSIBLE_FLAGS='--ask-become-pass'
 パスワードを聞かれたくない場合は、次のように渡します。
 
 ```sh
-make setup EXTRA_VARS="homebrew_sudo_password=YOUR_PASSWORD"
+make setup EXTRA_VARS="sudo_pass=YOUR_PASSWORD"
 ```
 
 途中で起きること:
@@ -159,7 +159,7 @@ make setup \
 - mise ロールは `.ssh/config` のパーミッションを 600 に自動修正してからインストールを実行し、ダウンロードの一時失敗時にはリトライします
 - macOS ロールでデフォルトシェルを設定する際は、Homebrew の zsh（`/opt/homebrew/bin/zsh`）が存在すればそちらを優先し、無ければ `/bin/zsh` を設定します
 - GitHub ログインと SSH 鍵の作成・登録は、Ansible の `github` ロールが gh のログイン状態を確認して処理します（ブラウザ認証が必要な場合はプロンプトに従ってください）
-- Brewfile は dotfiles リポジトリで管理し、`link-symbolic-dotfiles.sh` が `~/brewfile.me` へリンクします
+- Brewfile は dotfiles リポジトリの `~/dev/me/dotfiles/brewfile.me` で管理し、`homebrew` ロールがそれを直接読みます（ホーム直下へのリンクは作りません）
 - プレイブック内のシェルは、必要最小限の PATH で実行する設計です
 
 ## Ansible のロールが行うこと
