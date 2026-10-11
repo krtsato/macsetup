@@ -34,15 +34,16 @@ npx markdownlint-cli2 --config ~/dev/me/dotfiles/.markdownlint.yaml <file>
 | 3 | `macos` | `osx_defaults` / NVRAM でシステム設定 |
 | 4 | `dotfiles` | `link-symbolic-dotfiles.sh` でシンボリックリンク作成 |
 | 5 | `github` | `gh auth` 確認 ＋ SSH 鍵の生成・登録 |
-| 6 | `mise` | `install-mise-tools.sh` で言語ツール |
-| 7 | `uv_tools` | `uv tool install` で版を固定した道具（NotebookLM の `nlm`） |
-| 8 | `go` | `go install` でバイナリ |
-| 9 | `npm` | `npm install -g` でグローバルパッケージ（textlint など） |
-| 10 | `vscode` | `install-vscode-extensions.sh` で拡張機能 |
-| 11 | `nightly_launcher` | `krtsato/watcher` を取得し、その `plan.json` の枠ごとに LaunchAgent を生成・登録 |
-| 12 | `moomoo` | moomoo の接続役 OpenD のログ掃除 LaunchAgent を入れ、SDK のコンテナ image が無ければ作る。OpenD 本体は手で入れる |
+| 6 | `repos` | 夜間の自動実行が前提にする手元の複製 9 本を、無いものだけ複製（場所は GitHub の変数から読む。既存は触らない） |
+| 7 | `mise` | `install-mise-tools.sh` で言語ツール |
+| 8 | `uv_tools` | `uv tool install` で版を固定した道具（NotebookLM の `nlm`） |
+| 9 | `go` | `go install` でバイナリ |
+| 10 | `npm` | `npm install -g` でグローバルパッケージ（textlint など） |
+| 11 | `vscode` | `install-vscode-extensions.sh` で拡張機能 |
+| 12 | `nightly_launcher` | `krtsato/watcher` を取得し、その `plan.json` の枠ごとに LaunchAgent を生成・登録 |
+| 13 | `moomoo` | moomoo の接続役 OpenD のログ掃除 LaunchAgent を入れ、SDK のコンテナ image が無ければ作る。OpenD 本体は手で入れる |
 
-順序には依存がある。`nightly_launcher` は `gh` の認証（5）と `go`（8）が済んでいる必要がある。`moomoo` は trade-moomoo の複製が要る。
+順序には依存がある。`nightly_launcher` は `gh` の認証（5）と `go`（9）が済んでいる必要がある。`repos` は `gh` の認証（5）の後。`moomoo` は trade-moomoo の複製が要る。
 
 ## パッケージを足すとき — 3 か所を揃える
 
@@ -123,12 +124,13 @@ macsetup/
 │   ├── exec.yaml               # メインプレイブック（ロールの順序はここ）
 │   ├── doctor.yaml             # 点検プレイブック（読むだけ）
 │   ├── hosts                   # localhost のみ
-│   └── roles/                  # 13 ロール
+│   └── roles/                  # 14 ロール
 │       ├── dotfiles_repo/      # dotfiles の clone/pull + hooks 設定
 │       ├── homebrew/           # Brewfile によるパッケージ管理
 │       ├── macos/              # macOS システム設定
 │       ├── dotfiles/           # シンボリックリンク作成
 │       ├── github/             # GitHub CLI 認証 + SSH 鍵
+│       ├── repos/              # 夜間の自動実行が前提にする手元の複製
 │       ├── mise/               # 言語ツール
 │       ├── uv_tools/           # 版を固定した uv の道具（nlm）
 │       ├── go/                 # Go バイナリ

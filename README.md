@@ -78,13 +78,14 @@ Ansible の `github` ロールが gh ログイン状態の確認と SSH 鍵作�
 | 3 | `macos` | `osx_defaults` で macOS 設定適用（ダークモード固定、キーリピート高速(InitialKeyRepeat=13/KeyRepeat=1)、トラックパッド速度最速、Dock アプリ初期化、Finder 表示(隠しファイル/拡張子/ステータスバー/パスバー)、バッテリー残量表示、スクショ保存設定(名前img/日付なし/~/Desktop/tmp)など） |
 | 4 | `dotfiles` | `./scripts/link-symbolic-dotfiles.sh` を非対話実行 |
 | 5 | `github` | gh ログイン確認 → `setup-github-ssh.sh` で鍵登録 |
-| 6 | `mise` | `./scripts/install-mise-tools.sh` |
-| 7 | `uv_tools` | `uv tool install` で版を固定した道具を入れる（NotebookLM の `nlm` 0.9.6。版は `roles/uv_tools/defaults`） |
-| 8 | `go` | Go ツールを `go install`（mise shims を PATH に含めて実行） |
-| 9 | `npm` | npm グローバルパッケージを `npm install -g`（mise shims を PATH に含めて実行）。textlint は Homebrew に formula がないため npm で導入する |
-| 10 | `vscode` | `./scripts/install-vscode-extensions.sh` |
-| 11 | `nightly_launcher` | `krtsato/watcher` を取得し、その `plan.json` の枠ごとに LaunchAgent を生成して登録 |
-| 12 | `moomoo` | trade-moomoo の定義から OpenD のログ掃除 LaunchAgent を入れ、SDK のコンテナ image `moomoo-sdk:latest` が無ければ作る（Docker Desktop が動いていなければ知らせて先へ進む） |
+| 6 | `repos` | 手元の複製 9 本（実行役を置く 5 本・変数が指す 6 本・watcher の和）を無いものだけ SSH（`git@github.com:krtsato/<name>.git`）で複製。場所は GitHub の repo variable `*_CLONE_DIR` を実行時に読む。既存の複製は pull もせず、git でない・origin が違うときは止める |
+| 7 | `mise` | `./scripts/install-mise-tools.sh` |
+| 8 | `uv_tools` | `uv tool install` で版を固定した道具を入れる（NotebookLM の `nlm` 0.9.6。版は `roles/uv_tools/defaults`） |
+| 9 | `go` | Go ツールを `go install`（mise shims を PATH に含めて実行） |
+| 10 | `npm` | npm グローバルパッケージを `npm install -g`（mise shims を PATH に含めて実行）。textlint は Homebrew に formula がないため npm で導入する |
+| 11 | `vscode` | `./scripts/install-vscode-extensions.sh` |
+| 12 | `nightly_launcher` | `krtsato/watcher` を取得し、その `plan.json` の枠ごとに LaunchAgent を生成して登録 |
+| 13 | `moomoo` | trade-moomoo の定義から OpenD のログ掃除 LaunchAgent を入れ、SDK のコンテナ image `moomoo-sdk:latest` が無ければ作る（Docker Desktop が動いていなければ知らせて先へ進む） |
 
 ### 夜の起動（`nightly_launcher`）
 

@@ -1,0 +1,45 @@
+# 無いものだけ複製する。既にあるものは pull もしない（作業中の変更や別の枝を壊さない）。
+# 場所が git の複製でない、または origin が違うときは触らずに止める。
+- name: Ensure the local clones the nightly automation needs
+  ansible.builtin.shell: |
+    set -euo pipefail
+    name="{{ item.name }}"
+    dir=""
+    {% for ref in item.vars %}
+    got="$(gh variable get "{{ ref.split('/')[1] }}" -R "krtsato/{{ ref.split('/')[0] }}")" \
+      || { echo "{{ ref }}: GitHub の変数を読めない" >&2; exit 1; }
+    [ -n "${got}" ] || { echo "{{ ref }}: 変数が空" >&2; exit 1; }
+    if [ -n "${dir}" ] && [ "${dir}" != "${got}" ]; then
+      echo "${name}: 変数が別々の場所を指している（{{ ref }}）" >&2
+      exit 1
+    fi
+    dir="${got}"
+    {% endfor %}
+    dir="${dir:-{{ repos_root }}/${name}}"
+    if [ -e "${dir}" ]; then
+      # git -C は親へ遡って探すので、その場所が複製の最上位そのものかを確かめる
+      top="$(git -C "${dir}" rev-parse --show-toplevel 2>/dev/null)" \
+        || { echo "${dir}: git の複製でない" >&2; exit 1; }
+      [ "$(cd "${top}" && pwd -P)" = "$(cd "${dir}" && pwd -P)" ] \
+        || { echo "${dir}: git の複製でない（別の複製 ${top} の中）" >&2; exit 1; }
+      url="$(git -C "${dir}" config --get remote.origin.url 2>/dev/null)" \
+        || { echo "${dir}: origin が無い" >&2; exit 1; }
+      re="^(https://github\.com/|git@github\.com:|ssh://git@github\.com/)krtsato/${name}(\.git)?$"
+      [[ "${url}" =~ ${re} ]] || { echo "${dir}: origin が krtsato/${name} でない" >&2; exit 1; }
+      echo "present"
+      exit 0
+    fi
+    mkdir -p "$(dirname "${dir}")"
+    # gh の git_protocol は新しい端末で https が既定なので、SSH を明示する（github 役割が鍵を登録済み）
+    git clone "git@github.com:krtsato/${name}.git" "${dir}"
+    echo "cloned"
+  args:
+    executable: /bin/bash
+  environment:
+    PATH: /opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin
+  loop: "{{ repos_list }}"
+  loop_control:
+    label: "{{ item.name }}"
+  register: repos_result
+  changed_when: "'cloned' in repos_result.stdout_lines"
+  failed_when: repos_result.rc != 0

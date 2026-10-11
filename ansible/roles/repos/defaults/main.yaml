@@ -1,0 +1,25 @@
+# 夜間の自動実行が手元の複製を前提にしているリポジトリ（重複を除いて 9 本）。
+# - vars: その複製の場所を指す GitHub の repo variable（<repo>/<名前>）。指定があれば値を実行時に読み、
+#   複数あれば全部が同じ場所を指すことを確かめる。無ければ repos_root/<name>
+# - 実行役を置く 5 本と、夜間の起動役 watcher も含める
+# 揃っているかは `make doctor` が見る（roles/doctor/vars の doctor_clone_vars）。
+repos_root: "{{ lookup('env', 'HOME') }}/dev/me"
+repos_list:
+  - name: mcp-notebooklm
+    vars: [mcp-note/NOTEBOOKLM_CLONE_DIR, mcp-seeking-alpha/NOTEBOOKLM_CLONE_DIR, mcp-mediable/NOTEBOOKLM_CLONE_DIR]
+  - name: mcp-youtube
+    vars: [mcp-mediable/YOUTUBE_CLONE_DIR]
+  - name: mcp-invest-knowledge
+    vars: [mcp-tradingview/KNOWLEDGE_CLONE_DIR]
+  - name: mcp-mediable
+    vars: [mcp-invest-knowledge/MEDIABLE_CLONE_DIR]
+  - name: trade-moomoo
+    vars: [mcp-invest-knowledge/MOOMOO_CLONE_DIR]
+  - name: mcp-tradingview
+    vars: [mcp-invest-knowledge/TRADINGVIEW_CLONE_DIR]
+  - name: mcp-note
+    vars: []
+  - name: mcp-seeking-alpha
+    vars: []
+  - name: watcher
+    vars: []

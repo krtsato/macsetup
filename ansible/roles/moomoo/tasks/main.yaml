@@ -2,13 +2,26 @@
 # OpenD のログインと二段階認証、待受 127.0.0.1:11111、ログイン項目への登録、Docker Desktop の
 # host networking は人がやる（README の手動作業）。揃っているかは `make doctor` が見る。
 
-# 段 4 で手元の複製をまとめて揃えるまでは、watcher と同じくここで取得する（無ければ setup 全体を止めない）
+# 複製の場所は repos 役割と同じく GitHub の変数から読む（既定の場所と違う端末で別の複製を使わないため）
+- name: Resolve the trade-moomoo clone location
+  ansible.builtin.command: gh variable get MOOMOO_CLONE_DIR -R krtsato/mcp-invest-knowledge
+  environment:
+    PATH: /opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin
+  register: moomoo_clone_var
+  changed_when: false
+  failed_when: moomoo_clone_var.rc != 0 or (moomoo_clone_var.stdout | trim) == ""
+
+- name: Use the location from the variable
+  ansible.builtin.set_fact:
+    moomoo_repo: "{{ moomoo_clone_var.stdout | trim }}"
+
+# 複製は repos 役割が先に揃える。この役割だけを流したときに止まらないよう、無ければここでも取得する
 - name: Ensure the trade-moomoo clone is present
   ansible.builtin.shell: |
     if [ -d "{{ moomoo_repo }}/.git" ]; then
       echo "present"
     else
-      gh repo clone krtsato/trade-moomoo "{{ moomoo_repo }}"
+      git clone git@github.com:krtsato/trade-moomoo.git "{{ moomoo_repo }}"
     fi
   environment:
     PATH: /opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin
