@@ -1,0 +1,292 @@
+# 点検の一覧。持ち出し・持ち込み（段 2）・点検（段 1）が同じ一覧を読む正本。
+# パス・分類・権限・用途だけを持ち、中身（秘密の値）は持たない。
+# プロファイル名はアカウントの識別子に近いので書かない。各リポジトリの GitHub 変数
+# NOTEBOOKLM_PROFILE を実行時に読んで {profile} へ展開する。
+# 複製の場所も書かない。GitHub の変数を毎回読む（書くと変数を変えたときに黙ってずれる）。
+
+doctor_phases:
+  - pre-import
+  - cutover
+  - ready
+
+# --- 1. ホーム配下の秘密と記録 --------------------------------------------------
+# path はホームからの相対。class は auth（認証）/ state（処理済みの記録）/ inbox（受け箱と保留）。
+# kind=file は mode を満たす通常のファイル、kind=dir は mode を満たすディレクトリ。
+# children は dir の中に必須で居る 0600 のファイル。recursive は配下すべて
+# （ディレクトリ 0700・ファイル 0600）を点検する。.DS_Store は除外対象なので警告にとどめる。
+# required=false は無くてよいが、有るなら権限は守る。
+# 段 2 の許可一覧（2026-10-11 の端末で列挙）に 1 対 1 で対応させる。除外した物は点検しない。
+doctor_config_files:
+  # 認証
+  - path: ".config/mcp-notebooklm/cookies/{profile}.cookies.txt"
+    per_profile: true
+    kind: "file"
+    class: "auth"
+    mode: "0600"
+    required: true
+    purpose: "NotebookLM の cookie（プロファイルごと）"
+  - path: ".config/mcp-notebooklm/nlm/auth.json"
+    kind: "file"
+    class: "auth"
+    mode: "0600"
+    required: true
+    purpose: "nlm の認証"
+  - path: ".config/mcp-notebooklm/nlm/profiles/default"
+    kind: "dir"
+    class: "auth"
+    mode: "0700"
+    required: true
+    children: [cookies.json, metadata.json]
+    purpose: "nlm の既定プロファイル"
+  - path: ".config/mcp-notebooklm/nlm/profiles/{profile}"
+    per_profile: true
+    kind: "dir"
+    class: "auth"
+    mode: "0700"
+    required: true
+    children: [cookies.json, metadata.json]
+    purpose: "nlm のプロファイル"
+  - path: ".config/mcp-mediable/credentials.json"
+    kind: "file"
+    class: "auth"
+    mode: "0600"
+    required: true
+    purpose: "mediable のログイン情報"
+  - path: ".config/mcp-mediable/device.json"
+    kind: "file"
+    class: "auth"
+    mode: "0600"
+    required: true
+    purpose: "mediable の端末登録"
+  - path: ".config/mcp-mediable/client_secret.json"
+    kind: "file"
+    class: "auth"
+    mode: "0600"
+    required: true
+    purpose: "YouTube の OAuth クライアント（mediable）"
+  - path: ".config/mcp-youtube/token.json"
+    kind: "file"
+    class: "auth"
+    mode: "0600"
+    required: true
+    purpose: "YouTube の OAuth トークン"
+  - path: ".config/mcp-youtube/client_secret.json"
+    kind: "file"
+    class: "auth"
+    mode: "0600"
+    required: true
+    purpose: "YouTube の OAuth クライアント（mcp-youtube）"
+  - path: ".config/mcp-tradingview/cookies.json"
+    kind: "file"
+    class: "auth"
+    mode: "0600"
+    required: true
+    purpose: "TradingView の cookie"
+  - path: ".codex/auth.json"
+    kind: "file"
+    class: "auth"
+    mode: "0600"
+    required: true
+    purpose: "codex のログイン"
+  # 処理済みの記録（無いと送信済みの動画を全件再送する）
+  - path: ".config/mcp-mediable/youtube-upload-state.json"
+    kind: "file"
+    class: "state"
+    mode: "0600"
+    required: true
+    purpose: "YouTube 送信済みの記録"
+  - path: ".config/mcp-mediable/youtube-captions-sync-state.json"
+    kind: "file"
+    class: "state"
+    mode: "0600"
+    required: true
+    purpose: "字幕同期の記録"
+  - path: ".config/mcp-mediable/notebooklm-sync-state.json"
+    kind: "file"
+    class: "state"
+    mode: "0600"
+    required: true
+    purpose: "NotebookLM 同期の記録"
+  - path: ".config/mcp-mediable/stuck-captions-state.json"
+    kind: "file"
+    class: "state"
+    mode: "0600"
+    required: true
+    purpose: "詰まった字幕の記録"
+  - path: ".config/mcp-mediable/skipped-videos.json"
+    kind: "file"
+    class: "state"
+    mode: "0600"
+    required: false
+    purpose: "飛ばした動画の記録（無いことがある）"
+  # 受け箱と保留（ディレクトリごと。配下はファイル 0600）
+  - path: ".config/mcp-mediable/notebooklm-inbox"
+    kind: "dir"
+    class: "inbox"
+    mode: "0700"
+    required: true
+    recursive: true
+    purpose: "mediable の受け箱"
+  - path: ".config/mcp-note/notebooklm-inbox"
+    kind: "dir"
+    class: "inbox"
+    mode: "0700"
+    required: true
+    recursive: true
+    purpose: "note の受け箱"
+  - path: ".config/mcp-seeking-alpha/notebooklm-inbox"
+    kind: "dir"
+    class: "inbox"
+    mode: "0700"
+    required: false
+    recursive: true
+    purpose: "seeking-alpha の受け箱（無いことがある）"
+  - path: ".config/mcp-invest-knowledge/withheld-drafts"
+    kind: "dir"
+    class: "inbox"
+    mode: "0700"
+    required: true
+    recursive: true
+    purpose: "保留した下書き"
+
+# --- 2. 手元の複製（8 組）---------------------------------------------------------
+# repo の GitHub 変数 name が複製のパス。origin は krtsato/<expect> でなければならない。
+# entry_points は、そのリポジトリのワークフロー（とそれが呼ぶ script）が複製の中で実際に使う物。
+# 導出の手順: ~/dev/me/*/.github/workflows/*.yaml を CLONE_DIR で grep し、
+#   $X_CLONE_DIR/... の参照、git -C "$X_CLONE_DIR" archive origin/main <path>、
+#   git show <ref>:<path>（mcp-note/scripts/sync-magazine-audio.sh）を拾った（2026-10-11）。
+# 呼び出し先が移ると壊れる型（mcp-invest-knowledge #524: bin/ への移動）を拾うための一覧。
+# kind: exec_file=作業ツリーの通常のファイルで実行可 / dir=作業ツリーのディレクトリ /
+#       git_path=origin/main にあるパス（git archive・git show で読まれるもの）
+doctor_nlm_entry_points: &doctor_nlm_entry_points
+  - kind: "git_path"
+    path: "scripts/build-pinned.sh"
+    used_by: "git show <ref>:scripts/build-pinned.sh"
+
+doctor_clones:
+  - repo: mcp-mediable
+    name: NOTEBOOKLM_CLONE_DIR
+    expect: mcp-notebooklm
+    entry_points: *doctor_nlm_entry_points
+  - repo: mcp-mediable
+    name: YOUTUBE_CLONE_DIR
+    expect: mcp-youtube
+    entry_points:
+      - {kind: git_path, path: "Dockerfile", used_by: "git archive origin/main | docker build"}
+  - repo: mcp-note
+    name: NOTEBOOKLM_CLONE_DIR
+    expect: mcp-notebooklm
+    entry_points: *doctor_nlm_entry_points
+  - repo: mcp-seeking-alpha
+    name: NOTEBOOKLM_CLONE_DIR
+    expect: mcp-notebooklm
+    entry_points: *doctor_nlm_entry_points
+  - repo: mcp-tradingview
+    name: KNOWLEDGE_CLONE_DIR
+    expect: mcp-invest-knowledge
+    entry_points:
+      - {kind: git_path, path: "sources/market-ratios", used_by: "market-ratio-sync: git archive origin/main"}
+      - {kind: git_path, path: "sources/technique-notes", used_by: "ledger-sync: git archive origin/main"}
+  - repo: mcp-invest-knowledge
+    name: MEDIABLE_CLONE_DIR
+    expect: mcp-mediable
+    entry_points:
+      - {kind: git_path, path: "captions/normalized", used_by: "digest-*/note-*/undigested-captions: git archive origin/main"}
+  - repo: mcp-invest-knowledge
+    name: MOOMOO_CLONE_DIR
+    expect: trade-moomoo
+    entry_points:
+      - {kind: exec_file, path: "bin/moomoo-watchlist", used_by: "watchlist-sync（失敗しても成功で終わる。#524）"}
+  - repo: mcp-invest-knowledge
+    name: TRADINGVIEW_CLONE_DIR
+    expect: mcp-tradingview
+    entry_points:
+      - {kind: dir, path: "cmd/tradingview-watchlist-sync", used_by: "watchlist-sync: cd して go run"}
+
+# --- 3. GitHub 側 -----------------------------------------------------------------
+# 注意: これは「移行に必須のリポジトリと名前の組」であって、GitHub に残る全設定の
+# 棚卸しではない。どのワークフローからも参照されていない古い秘密もある。
+# 値は読まない・出さない。名前の有無だけを gh で確かめる。
+doctor_github_secrets:
+  - repo: "mcp-mediable"
+    name: "MEDIABLE_EMAIL"
+  - repo: "mcp-mediable"
+    name: "MEDIABLE_PASSWORD"
+  - repo: "mcp-note"
+    name: "NOTE_COOKIES"
+  - repo: "mcp-seeking-alpha"
+    name: "SEEKING_ALPHA_COOKIES"
+  - repo: "watcher"
+    name: "WATCH_TOKEN"
+  - repo: "watcher"
+    name: "SLACK_WEBHOOK_URL"
+
+# 必須の変数。複製の 8 組（doctor_clones）は自動で加わる。既定値を持つ変数は任意なので書かない。
+doctor_github_variables_extra:
+  - repo: "mcp-note"
+    name: "NOTEBOOKLM_REF"
+  - repo: "mcp-note"
+    name: "NOTEBOOKLM_IMPL"
+  - repo: "mcp-note"
+    name: "NOTEBOOKLM_PROFILE"
+  - repo: "mcp-seeking-alpha"
+    name: "NOTEBOOKLM_REF"
+  - repo: "mcp-seeking-alpha"
+    name: "NOTEBOOKLM_IMPL"
+  - repo: "mcp-seeking-alpha"
+    name: "NOTEBOOKLM_PROFILE"
+  - repo: "mcp-mediable"
+    name: "NOTEBOOKLM_REF"
+  - repo: "mcp-mediable"
+    name: "NOTEBOOKLM_IMPL"
+  - repo: "mcp-mediable"
+    name: "NOTEBOOKLM_PROFILE"
+
+# NOTEBOOKLM_PROFILE を読んで profile 名を集めるリポジトリ
+doctor_profile_repos:
+  - mcp-note
+  - mcp-seeking-alpha
+  - mcp-mediable
+
+# --- 4. 実行役（5 体）---------------------------------------------------------------
+# dir はホームからの相対の導入先。label は GitHub 上のラベル。
+doctor_runners:
+  - repo: "mcp-mediable"
+    label: "mediable-sync"
+    dir: "dev/me/mcp-mediable/actions-runners"
+  - repo: "mcp-note"
+    label: "magazine-sync"
+    dir: "dev/me/mcp-note/actions-runners/magazine-sync"
+  - repo: "mcp-seeking-alpha"
+    label: "alpha-picks-sync"
+    dir: "dev/me/mcp-seeking-alpha/actions-runners/alpha-picks-sync"
+  - repo: "mcp-tradingview"
+    label: "tradingview-sync"
+    dir: "dev/me/mcp-tradingview/actions-runners"
+  - repo: "mcp-invest-knowledge"
+    label: "knowledge-sync"
+    dir: "dev/me/mcp-invest-knowledge/actions-runners"
+
+# 実行役の .path の先頭に置くべき場所（ホームからの相対）
+doctor_mise_shims: ".local/share/mise/shims"
+
+# --- 5. 起動役 --------------------------------------------------------------------
+# 時刻・順序の正本は krtsato/watcher の plan.json。ここは枠の名前と label だけを持つ。
+doctor_launcher_labels:
+  - com.krtsato.watcher.nightly-launcher.A
+  - com.krtsato.watcher.nightly-launcher.B
+# 未完了の再開記録の置き場（ホームからの相対）
+doctor_launcher_state_glob: "dev/me/watcher/.launcher/state-*.json"
+
+# --- 6. 道具と接続役 ----------------------------------------------------------------
+doctor_nlm_path: ".local/bin/nlm"
+doctor_nlm_version: "0.9.6"
+doctor_commands:
+  - claude
+  - codex
+  - gh
+  - jq
+  - git
+doctor_docker_settings: "Library/Group Containers/group.com.docker/settings-store.json"
+doctor_opend_host: "127.0.0.1"
+doctor_opend_port: 11111

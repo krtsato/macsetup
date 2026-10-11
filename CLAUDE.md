@@ -14,6 +14,9 @@ make setup ANSIBLE_FLAGS='--ask-become-pass'
 # プレイブック単体
 make playbook ANSIBLE_FLAGS='--ask-become-pass'
 
+# 点検（読むだけ。PHASE は pre-import / cutover / ready、既定 ready）
+make doctor PHASE=ready
+
 # Markdown lint（編集後に必ず）
 npx markdownlint-cli2 --config ~/dev/me/dotfiles/.markdownlint.yaml <file>
 ```
@@ -67,6 +70,25 @@ npx markdownlint-cli2 --config ~/dev/me/dotfiles/.markdownlint.yaml <file>
 流し忘れると Mac は古い時刻で起き、起動役は「枠の時刻から離れすぎています」と言って**毎晩何もしない**。
 見張りが数日後に報告するが、気づくのは遅れる。
 
+## 点検 `make doctor`
+
+`ansible/doctor.yaml`（ロール `doctor`）。**読むだけで何も変更しない**（全タスク `changed_when: false`）。`exec.yaml` には入れない。
+
+| 項目 | 場所・決まり |
+| --- | --- |
+| 一覧の正本 | `ansible/roles/doctor/vars/main.yaml`（パス・分類・権限・用途・実行役・入口ファイル。**中身の値は持たない**） |
+| 点検の本体 | `ansible/roles/doctor/files/checks.sh`（グループごとに `FAIL\|`・`WARN\|` の行を出し、Ansible が溜めて最後に一覧と失敗にする） |
+| 段階 | `doctor_phase` = `pre-import` / `cutover` / `ready`（既定 `ready`、不正値は即失敗） |
+| テスト用の差し込み | `doctor_home`・`doctor_launchagents_dir`・`doctor_extra_config_files`・`doctor_clone_dir_overrides` |
+| 壊して確かめる | `scripts/test-doctor.sh`（欠けた必須ファイル・存在しない複製・`SessionCreate=true` の plist を名指しで検出するか） |
+
+- **公開リポジトリなので**秘密の値・NotebookLM のプロファイル名を書かない。プロファイル名と複製の場所は GitHub の変数から実行時に読む
+- 入口ファイルの一覧は、ワークフローの `$X_CLONE_DIR/...`・`git archive origin/main`・`git show` の使い方から導出する。呼び出し先が動いたらここも直す
+- プロファイル名は `checks.sh` の shell 変数の中だけで持ち、出力・Ansible の変数へ出さない（`プロファイル1` などの別名で表示。`scripts/test-doctor.sh` が全出力を探して 0 件を確かめる）
+- ログインは実行役と同じ環境（`env -i` ＋ 実行役の `.path`）でも確かめる。キーチェーンのセッションの差は plist の `SessionCreate=false` の点検が受け持ち、launchd から起こした process での確認は段 6 の実際の実行でしかできない（launchd の仕事は作らない）
+- OpenD は日本時間の日時で判定する。ready では土曜 01:30〜月曜 01:30 以外の閉鎖を失敗にする（`DOCTOR_NOW` / `doctor_now` で上書き可）
+- GitHub の秘密 6 組は「移行に必須の組」であって全設定の棚卸しではない
+
 ## 規約
 
 ### Ansible
@@ -97,8 +119,9 @@ macsetup/
 ├── Makefile                    # オーケストレーション
 ├── ansible/
 │   ├── exec.yaml               # メインプレイブック（ロールの順序はここ）
+│   ├── doctor.yaml             # 点検プレイブック（読むだけ）
 │   ├── hosts                   # localhost のみ
-│   └── roles/                  # 10 ロール
+│   └── roles/                  # 11 ロール
 │       ├── dotfiles_repo/      # dotfiles の clone/pull + hooks 設定
 │       ├── homebrew/           # Brewfile によるパッケージ管理
 │       ├── macos/              # macOS システム設定
@@ -108,6 +131,7 @@ macsetup/
 │       ├── go/                 # Go バイナリ
 │       ├── npm/                # グローバルパッケージ
 │       ├── vscode/             # VSCode 拡張機能
-│       └── nightly_launcher/   # 夜の起動の LaunchAgent
+│       ├── nightly_launcher/   # 夜の起動の LaunchAgent
+│       └── doctor/             # 点検（exec.yaml には入れない）
 └── scripts/                    # Ansible から呼び出されるスクリプト群
 ```

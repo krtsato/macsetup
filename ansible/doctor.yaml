@@ -1,0 +1,7 @@
+# 点検（読むだけ）。exec.yaml とは別に流す。`make doctor [PHASE=pre-import|cutover|ready]`
+- name: Read-only doctor checks
+  hosts: default
+  connection: local
+  gather_facts: false
+  roles:
+    - doctor
