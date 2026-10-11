@@ -43,7 +43,10 @@ cat >"${fake}/launchctl" <<'EOF'
 #!/bin/bash
 d="$(dirname "$0")"
 case "$1" in
-  print) grep -qx "${2##*/}" "${d}/loaded" 2>/dev/null ;;
+  # 本物と同じく、無ければ 113。launchctl-broken があれば問い合わせ自体の失敗（112）を返す
+  print)
+    [ -e "${d}/launchctl-broken" ] && exit 112
+    grep -qx "${2##*/}" "${d}/loaded" 2>/dev/null || exit 113 ;;
   *) echo "unexpected launchctl call: $*" >&2; exit 1 ;;
 esac
 EOF
@@ -381,6 +384,22 @@ run_secrets f3 restore "${img}"
 assert "(f3) 拒否" rc_is_nonzero f3
 assert "(f3) 理由" contains "${tmp}/f3.out" "読み込み済み:"
 : >"${fake}/loaded"
+
+# (q) 問い合わせの失敗と予約名 ----------------------------------------------------------------
+log "(q) launchctl の問い合わせ失敗／ プロファイル名 default"
+HOME_UNDER_TEST="${home_a}"
+touch "${fake}/launchctl-broken"
+run_secrets q1 export "${tmp}/out/q1.dmg"
+rm -f "${fake}/launchctl-broken"
+assert "(q1) 問い合わせ失敗: 拒否" rc_is_nonzero q1
+assert "(q1) 理由" contains "${tmp}/q1.out" "確かめられない（launchctl が終了コード 112）"
+assert "(q1) イメージを作らない" test ! -e "${tmp}/out/q1.dmg"
+PROFILES_JSON='["default"]'
+run_secrets q2 export "${tmp}/out/q2.dmg"
+PROFILES_JSON="[\"${pa}\",\"${pb}\"]"
+assert "(q2) default: 拒否" rc_is_nonzero q2
+assert "(q2) 理由" contains "${tmp}/q2.out" "default は予約名"
+assert "(q2) イメージを作らない" test ! -e "${tmp}/out/q2.dmg"
 
 # (k) 実行役の停止確認は fail-closed ---------------------------------------------------------
 log "(k) 実行役: .runner が有るのに .service が無い／ Runner.Listener が動いている"

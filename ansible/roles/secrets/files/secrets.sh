@@ -213,6 +213,13 @@ load_profiles() {
       fi
     done
   fi
+  # default は許可一覧が固定で持つ profiles/default と重なるので、プロファイル名には使えない
+  for value in ${names[@]+"${names[@]}"}; do
+    if [ "${value}" = default ]; then
+      err "NOTEBOOKLM_PROFILE: default は予約名（profiles/default と重なる）"
+      bad=1
+    fi
+  done
   if [ "${bad}" != 0 ]; then
     # 復旧（recover）は通信に頼らない。読めなければ名前の置き換えができないので、出力の根拠を消す
     if [ "${profiles_soft}" = 1 ]; then profiles_unknown=1; PROFILES=(); echo '[]' >"${tmp}/profiles.json"; return 0; fi
@@ -323,7 +330,15 @@ check_stopped() {
   for label in $(jin -r '.launcher_labels[]'); do labels+=("${label}"); done
   if [ "${#labels[@]}" -gt 0 ]; then
     for label in "${labels[@]}"; do
-      if launchctl print "gui/$(id -u)/${label}" >/dev/null 2>&1; then LOADED+=("${label}"); fi
+      # 113 は「その名前のサービスが無い」＝読み込まれていない。それ以外の失敗（domain が違う・
+      # launchctl 自体の異常）は確かめられないので、止まっているとはみなさない
+      local lrc=0
+      launchctl print "gui/$(id -u)/${label}" >/dev/null 2>&1 || lrc=$?
+      case "${lrc}" in
+        0) LOADED+=("${label}") ;;
+        113) ;;
+        *) STOP_REASONS+=("${label}: 読み込みの有無を確かめられない（launchctl が終了コード ${lrc}）") ;;
+      esac
     done
   fi
   return 0
