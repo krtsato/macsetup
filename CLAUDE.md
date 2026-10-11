@@ -17,6 +17,12 @@ make playbook ANSIBLE_FLAGS='--ask-become-pass'
 # 点検（読むだけ。PHASE は pre-import / cutover / ready、既定 ready）
 make doctor PHASE=ready
 
+# 秘密と記録を暗号化イメージで運ぶ（段 2。list は読むだけ。合言葉は hdiutil が端末で尋ねる）
+make secrets-list
+make secrets-export OUT=<リポジトリの外の絶対パス.dmg>
+make secrets-import IMAGE=<絶対パス.dmg>
+make secrets-restore IMAGE=<絶対パス.dmg>
+
 # Markdown lint（編集後に必ず）
 npx markdownlint-cli2 --config ~/dev/me/dotfiles/.markdownlint.yaml <file>
 ```
@@ -117,6 +123,23 @@ make playbook EXTRA_VARS='runners_enabled=true nightly_launcher_enabled=true'
 - OpenD は日本時間の日時で判定する。ready では土曜 01:30〜月曜 01:30 以外の閉鎖を失敗にする（`DOCTOR_NOW` / `doctor_now` で上書き可）
 - GitHub の秘密 6 組は「移行に必須の組」であって全設定の棚卸しではない
 
+## 秘密の持ち出し・持ち込み `make secrets-*`
+
+`ansible/secrets.yaml`（ロール `secrets`）は入力 JSON を 0600 の一時ファイルへ書くだけ（`secrets_action=prepare`）。
+本体は `ansible/roles/secrets/files/secrets.sh` で、Makefile が**端末へ繋いだまま直接実行**する（2 段。一時ファイルは recipe の trap で消す）。
+**対話の端末から流す。Ansible・CI からは不可**（子プロセスは制御端末を持たず、`hdiutil` が合言葉を尋ねられない）。`exec.yaml` には入れない。
+
+| 項目 | 場所・決まり |
+| --- | --- |
+| 一覧の正本 | `roles/doctor/vars/main.yaml` の `doctor_config_files`（複製しない）。`{profile}` は `NOTEBOOKLM_PROFILE` から実行時に展開し、`secrets.sh` の shell 変数の中だけで持つ（出力は `<プロファイル1>` の別名） |
+| 動作 | `list`（表示のみ）/ `export`（旧端末。実行役 5 体・起動役 2 枠が読み込まれていたら拒否）/ `import`（衝突は 1 件でもあれば何も変えない。記録をたどって全部か何もなしか）/ `restore`（退避してから置換） |
+| 合言葉 | 引数・環境変数で渡さない。`hdiutil` が端末で尋ねる。テスト専用で `SECRETS_TEST_STDINPASS=1`（標準入力の `-stdinpass`） |
+| テスト用の環境変数 | `SECRETS_HOME`・`SECRETS_PROFILES_OVERRIDE`・`SECRETS_PATH_PREFIX`（偽の `launchctl`）・`SECRETS_TEST_FAIL_AFTER`・`SECRETS_TEST_SKIP_DOCTOR` |
+| 壊して確かめる | `scripts/test-secrets.sh`（往復・衝突・途中の失敗・許可外・拒否・restore・取り外し・擬似端末での対話入力・出力に名前や中身が出ないこと） |
+
+- **公開リポジトリなので**イメージ・秘密・ハッシュ・プロファイル名をコミットしない。イメージはリポジトリの外、権限 0600
+- 運ぶのは許可一覧だけ（`.DS_Store`・`.lock` は除外）。Claude と gh のログインはキーチェーンにあり運ばない。watcher の `.launcher` の再開記録も運ばない
+
 ## 規約
 
 ### Ansible
@@ -148,8 +171,9 @@ macsetup/
 ├── ansible/
 │   ├── exec.yaml               # メインプレイブック（ロールの順序はここ）
 │   ├── doctor.yaml             # 点検プレイブック（読むだけ）
+│   ├── secrets.yaml            # 秘密と記録の持ち出し・持ち込み（段 2）
 │   ├── hosts                   # localhost のみ
-│   └── roles/                  # 15 ロール
+│   └── roles/                  # 16 ロール
 │       ├── dotfiles_repo/      # dotfiles の clone/pull + hooks 設定
 │       ├── homebrew/           # Brewfile によるパッケージ管理
 │       ├── macos/              # macOS システム設定
@@ -164,6 +188,7 @@ macsetup/
 │       ├── runners/            # 自前の実行役の登録と常駐設定（起動は切り替えの時だけ）
 │       ├── nightly_launcher/   # 夜の起動の LaunchAgent
 │       ├── moomoo/             # OpenD のログ掃除と SDK の image
-│       └── doctor/             # 点検（exec.yaml には入れない）
+│       ├── doctor/             # 点検（exec.yaml には入れない）
+│       └── secrets/            # 秘密の持ち出し・持ち込み（exec.yaml には入れない）
 └── scripts/                    # Ansible から呼び出されるスクリプト群
 ```
