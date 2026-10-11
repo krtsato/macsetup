@@ -115,10 +115,10 @@ make playbook EXTRA_VARS='runners_enabled=true nightly_launcher_enabled=true'
 
 | 項目 | 場所・決まり |
 | --- | --- |
-| 共有の部品 | `scripts/cutover-lib.sh`。完了の一覧 = 起動役の予定表（`$REPOS_ROOT/watcher/cmd/nightly-launcher/plan.json`）の仕事 ＋ 予定表に無い自前実行のワークフロー。実行役を置くリポジトリは `roles/runners/defaults` の `runners_list` から、ワークフローは手元の複製から実行時に読む（一覧を書き写さない） |
-| `make cutover-trial` | `scripts/cutover-trial.sh`。`dry_run` の入力があれば `dry_run=true`（＋あれば `skip_audio`・`audio_dry_run`・件数=1）、入力も書き込み権限も無ければ入力なし。`dry_run` でも副作用が残るもの（`digest-author`・`ledger-sync`）は `cutover_trial_excluded` に理由つきで固定。出すだけ |
-| `make cutover-check` | `scripts/cutover-check.sh`。各単位が SINCE 以降に新端末の実行役だけで成功したかを run と job の `runner_name` で判定。曜日限定は該当の曜日（日本時間）の run だけ数える。**同じワークフローを共有する単位は GitHub から見分けられない**ので、単位の数 N だけ成功が要る（`turnover-snapshot` 3・`daily-mediable-sync` 2）。pending があれば終了コード 1 |
-| 検査 | `scripts/test-cutover.sh`（21 単位・試し実行 14 本・夜間 4 本を固定して定義の変化に気づく。判定の論理は偽の `gh`） |
+| 共有の部品 | `scripts/cutover-lib.sh`。完了の一覧 = 起動役の予定表（watcher の `cmd/nightly-launcher/plan.json`）の仕事 ＋ 予定表に無い自前実行のワークフロー。実行役を置くリポジトリは `roles/runners/defaults` の `runners_list` から読み、予定表とワークフローは各複製を `git fetch origin main` して **origin/main** から `git show` で読む（作業ツリーは読まない。複製・fetch・workflows の欠けは名指しで失敗。一覧を書き写さない） |
+| `make cutover-trial` | `scripts/cutover-trial.sh`。`dry_run` の入力があれば `dry_run=true`（＋あれば `skip_audio`・`audio_dry_run`・件数=1）、入力が無く全 job の権限が**明示的に**読み取りだけなら入力なし（`permissions` の省略は対象外）。`dry_run` でも副作用が残るもの（`digest-author`・`note-author`・`daily-magazine-sync`・`daily-mediable-sync`・`ledger-sync`）は `cutover_trial_excluded` に理由つきで固定。出すだけ（今は試し実行 11・夜間 7） |
+| `make cutover-check` | `scripts/cutover-check.sh`。各単位が SINCE 以降に新端末の実行役だけで成功したかを、run と**全ページの job** の `runner_name` で判定（空・旧端末の job が 1 つでもあれば数えない）。曜日限定は該当の曜日（日本時間）の run だけ数える。**同じワークフローを共有する単位は GitHub から見分けられない**ので、**1 晩**（各枠の `at`〜`deadline` の窓）に単位数ぶんの新端末での成功があり、窓に失敗・取り消しが無いときだけ全単位を done にする（別々の晩は足さない。`turnover-snapshot` 3・`daily-mediable-sync` 2）。pending があれば終了コード 1 |
+| 検査 | `scripts/test-cutover.sh`（21 単位・試し実行 11 本・夜間 7 本を固定して定義の変化に気づく。判定の論理は偽の `gh`、読み先は一時の git リポジトリ） |
 
 - 完了の判定に**試し実行は入れない**（run に入力は残らず、`dry_run` の成功も数えてしまう）。SINCE は試し実行の翌日にする
 - ワークフローや予定表を意図して変えたら `scripts/test-cutover.sh` の期待を直す

@@ -255,7 +255,8 @@ make doctor
 
 **全ワークフローを手で起動してはいけません。** 変更要求を作る・状態を書き換える・証券口座の一覧に反映する副作用があります。
 副作用のないものだけを、次の命令で確かめます。この命令は**コマンドを出すだけで起動しません**
-（手元の複製のワークフロー定義を読んで作ります。複製が `main` にあること）。
+（手元の複製を `git fetch origin main`（読むだけ）してから、**GitHub の main** のワークフロー定義を読んで作ります。
+作業ツリーが別の branch や未 commit でも影響しません。複製が無い・fetch できない・`.github/workflows` が無いときは、名前を出して失敗します）。
 
 ```sh
 make cutover-trial
@@ -280,9 +281,11 @@ gh api repos/krtsato/mcp-tradingview/actions/runs/<run の番号>/jobs --jq '.jo
 
 | 種類 | 入力 | 備考 |
 | --- | --- | --- |
-| `dry_run` がある | `dry_run=true`（あれば `skip_audio=true`・`audio_dry_run=true`・件数を 1） | 変更要求・コミット・送信を止める。取得と検証は本物なので、**ログインや接続の確認になる** |
-| 入力が無く、書き込み権限も無い | 入力なし | 検査だけのワークフロー（`digest-check`・`note-check`・`watchlist-check`） |
+| `dry_run` がある（下の除外を除く） | `dry_run=true`（あれば `skip_audio=true`・`audio_dry_run=true`・件数を 1） | 変更要求・コミット・送信を止める。取得と検証は本物なので、**ログインや接続の確認になる** |
+| 入力が無く、**全 job の権限が明示的に読み取りだけ** | 入力なし | 検査だけのワークフロー（`digest-check`・`note-check`・`watchlist-check`）。**`permissions` を省略したものは対象外**（省略すると既定の権限になり、書き込めることがある） |
 | 夜間で確かめる | — | 下の表 |
+
+今の内訳は**試し実行 11 本・夜間で確かめる 7 本**です（`make cutover-trial` の出力が正本）。
 
 夜間で確かめるもの（`make cutover-trial` の出力が正本です）:
 
@@ -290,12 +293,15 @@ gh api repos/krtsato/mcp-tradingview/actions/runs/<run の番号>/jobs --jq '.jo
 | --- | --- |
 | `undigested-captions`・`digest-corpus-audit` | 入力が無く、実行すると追跡用の課題を更新する |
 | `digest-author` | `dry_run` でも、保留になった下書きを手元の保管場所へ書く。LLM の使用量も消費する |
+| `note-author` | `dry_run` でも Claude と Codex を呼び（使用量を消費）、作業の跡を書く。PR を作らないだけ |
+| `daily-magazine-sync`（mcp-note） | `dry_run` でも Docker の image を作り、最後に `docker system prune --force` を実行する |
+| `daily-mediable-sync` | `dry_run` でも最後の手順が downloads の削除と Docker の掃除（`make docker-prune`）を実行する |
 | `ledger-sync` | `dry_run` でも走査の本体が最後まで動く（最大 280 分・TradingView へ大量に問い合わせる） |
 
 注意:
 
 - `watchlist-sync` の試し実行は、TradingView と moomoo への**送信を止める**ので、OpenD の疎通の証拠にはなりません
-- `daily-magazine-sync` の `dry_run` は note の認証を使いません。`NOTE_COOKIES` の確認にはなりません
+- note・mediable・`note-author` は夜間の本番でしか確かめられません。ログインの不足は `make doctor` と夜間の結果で見ます
 - 試し実行の成功は、手順 14 の完了の数に**入れません**（下の「完了の確認」を参照）
 
 ## 手順 14 — 完了の確認と旧い登録の削除
@@ -306,7 +312,7 @@ gh api repos/krtsato/mcp-tradingview/actions/runs/<run の番号>/jobs --jq '.jo
 予定表に無い自前実行のワークフロー **3 本**（`digest-check`・`note-check`・`watchlist-check`）を合わせたものです。
 一覧は実行時に予定表と各ワークフローから作ります（書き写しません）。
 
-各単位が、**新端末の実行役で 1 回成功**したら完了です（run の job の `runner_name` が新端末の実行役であることまで見ます）。
+各単位が、**新端末の実行役で 1 回成功**したら完了です（**全ページの job** の `runner_name` が新端末の実行役であることまで見ます。`runner_name` が空の job・旧端末の job が 1 つでもあれば数えません）。
 曜日限定の仕事は、その曜日（日本時間）に走るまで未完了のままです（火曜 2 本・土曜 1 本・火〜土 5 本）。
 通常 **1 週間**かかります。
 
@@ -341,15 +347,18 @@ make cutover-check SINCE=2026-10-15 RUNNERS=newmac
 
 起動役の予定表には、同じワークフローを 1 晩に複数回起こす仕事があります
 （`turnover-snapshot` が 3 つ・`daily-mediable-sync` が 2 つ）。GitHub の run には**入力も仕事の ID も残らない**ので、
-どの run がどの単位かは見分けられません。そこで、**単位の数 N だけ成功が要る**と数えます。
+どの run がどの単位かは 1 本ずつ対応づけられません。そこで**1 晩ぶんをまとめて**判定します。
 
-- `turnover-snapshot`: 3 回の成功が要る（枠 A に 1・枠 B に 2）
-- `daily-mediable-sync`: 2 回の成功が要る（字幕だけの回と通常の回）
-- 表では共有の単位に `共有 k/N`（成功が k 回、要るのが N 回）と出ます。成功した順に、曜日の合う単位から埋めます
+| 条件（すべて満たす晩が 1 つあれば、そのワークフローの全単位が `done`） | 理由 |
+| --- | --- |
+| 同じ日付（日本時間）の、各枠の `at`〜`deadline` の窓の中に、**枠ごとの単位数ぶん以上**の新端末での成功がある | `turnover-snapshot` は枠 A に 1・枠 B に 2 |
+| その窓の中に、**失敗・取り消し・時間切れの run が 1 つも無い** | 失敗した単位があるのに、別の成功で埋まって見えるのを防ぐ |
+| 単位の曜日が、その晩の曜日に合う | 曜日限定の単位がある場合 |
 
-**この方式の限界**: 同じワークフローの run が 2 回成功すれば、どの単位の run かに関係なく 2 単位が `done` になります。
-たとえば一方の単位が毎晩失敗していても、もう一方の成功が 2 回あれば誤って `done` になりえます。
-`make cutover-check` の表で疑わしいときは、`gh run list` で各 run の時刻（枠 A は 01:30 台、枠 B は 06:30 台）と結果を見ます。
+- 起動役は 1 晩に各単位を 1 回ずつ起こすので、**その晩が丸ごと成功なら各単位が成功している**と言えます
+- 別々の晩の成功は足しません（片方の単位が毎晩失敗していても、別の晩の成功で埋まらないようにするため）
+- 表の `共有 k/N` は、その晩までに満たした数 k と、要る数 N です。満たさない理由は行に出ます
+- 窓の中の手動の run も数えてしまいます。試し実行は窓の外（昼）に行い、SINCE を試し実行の翌日にしてください
 
 ### 旧い登録の削除
 
@@ -376,15 +385,18 @@ gh api -X DELETE "repos/krtsato/<リポジトリ>/actions/runners/<上の表の 
 ## 戻し方
 
 **手順 14 の削除より前なら戻せます。** 旧端末の登録がまだ GitHub に残っているためです。
-新旧とも止め、新端末の今の状態を旧端末へ写してから、旧端末を再開します。
+**通常の切り替えと同じ安全な順序**で行います。**走っている仕事を切ってはいけません**
+（夜間の枠の外で行い、新端末の起動役を先に止めて、空になったことを確かめてから実行役を止めます）。
 
 | 順 | 端末 | やること |
 | --- | --- | --- |
-| 1 | 新端末 | 起動役と実行役を止める（手順 6・8 と同じ `launchctl bootout`）。`make secrets-export` は止まっていないと拒否する |
-| 2 | 新端末 | `make secrets-export OUT=$HOME/Desktop/macsetup-rollback.dmg` |
-| 3 | 旧端末 | `make secrets-restore IMAGE=/Volumes/USB/macsetup-rollback.dmg`（**旧端末の今の状態を `~/.macsetup-restore-backup-<日時>` へ退避してから**、新端末の記録で置き換える） |
-| 4 | 旧端末 | 実行役と起動役を再開する（下記） |
-| 5 | 旧端末 | 手順 5 の確認と同じ形で、実行役が online・起動役が読み込み済みであることを確かめる |
+| 1 | 新端末 | 起動役 2 本を無効にする（手順 6 と同じ `launchctl bootout`） |
+| 2 | 新端末 | 手順 5 の 4 つの確認を行う（起動役の process なし・実行役が仕事中でない・実行中と待機中が 0・再開記録がすべて完了済み。`.launcher` は新端末の `~/dev/me/watcher` を見る） |
+| 3 | 新端末 | **無効にした後で、もう一度**同じ 4 つを確認する（直前の確認と無効化の間に入った仕事を拾うため） |
+| 4 | 新端末 | 実行役 5 体を止め、GitHub 上で offline を確認する（手順 8 と同じ） |
+| 5 | 新端末 | `make secrets-export OUT=$HOME/Desktop/macsetup-rollback.dmg`（止まっていないと拒否される） |
+| 6 | 旧端末 | `make secrets-restore IMAGE=/Volumes/USB/macsetup-rollback.dmg`（**旧端末の今の状態を `~/.macsetup-restore-backup-<日時>` へ退避してから**、新端末の記録で置き換える） |
+| 7 | 旧端末 | 実行役と起動役を再開する（下記）。続けて実行役が online・起動役が読み込み済みであることを確かめる |
 
 旧端末の再開:
 
@@ -405,12 +417,12 @@ done
 
 | 命令 | スクリプト | 読むもの |
 | --- | --- | --- |
-| `make cutover-trial` | `scripts/cutover-trial.sh` | 手元の複製の `.github/workflows/*.yaml`（GitHub には触れない） |
-| `make cutover-check` | `scripts/cutover-check.sh` | 予定表・ワークフロー定義・GitHub の run と job（**読み取りだけ**） |
+| `make cutover-trial` | `scripts/cutover-trial.sh` | 手元の複製を `git fetch origin main`（読むだけ）して、origin/main の `.github/workflows/*.yaml` |
+| `make cutover-check` | `scripts/cutover-check.sh` | 予定表・ワークフロー定義（origin/main）・GitHub の run と job（**読み取りだけ**） |
 | 共有の部品 | `scripts/cutover-lib.sh` | 完了の一覧の導出 |
-| 検査 | `scripts/test-cutover.sh` | 偽の `gh` と固定の JSON（GitHub には触れない） |
+| 検査 | `scripts/test-cutover.sh` | 一時の git リポジトリと偽の `gh`・固定の JSON（先頭の確認だけは本物の複製を fetch する） |
 
-- 複製の場所は既定で `~/dev/me`（`REPOS_ROOT` で変えられる）。予定表は `$REPOS_ROOT/watcher/cmd/nightly-launcher/plan.json`
+- 複製の場所は既定で `~/dev/me`（`REPOS_ROOT` で変えられる）。必要な複製は実行役の 5 本と `watcher`。予定表は watcher の origin/main の `cmd/nightly-launcher/plan.json`
 - 完了の一覧を**書き写さない**のは、予定表やワークフローを変えたとき黙ってずれるため。代わりに `scripts/test-cutover.sh` が
-  「21 単位・試し実行 14 本・夜間で確かめる 4 本」を固定して、定義が動いたことに気づけるようにしています
+  「21 単位・試し実行 11 本・夜間で確かめる 7 本」を固定して、定義が動いたことに気づけるようにしています
   （定義を意図して変えたときは、そのテストの期待を直します）

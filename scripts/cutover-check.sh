@@ -3,15 +3,21 @@
 #   使い方: cutover-check.sh <SINCE> <RUNNERS>
 #     SINCE   : 数え始める日時。YYYY-MM-DD は日本時間のその日の 0 時、YYYY-MM-DDTHH:MM:SSZ はそのまま
 #     RUNNERS : 新端末の実行役。カンマ区切り。各要素は名前そのもの、または名前の末尾（`mac` なら `*-mac`）
-# 完了の一覧 = 起動役の予定表の仕事 ＋ 予定表に無い自前実行のワークフロー（cutover-lib.sh が作る）。
-# 単位は SINCE 以降に、新端末の実行役だけで動いて成功した run が 1 回あれば「完了」。
-#   - run の job がすべて新端末の実行役で動いていること（runner_name で見る）
-#   - 曜日限定の単位は、その曜日（日本時間）に始まった run だけを数える。該当の曜日が来るまで未完了
-#   - 同じワークフローを複数の単位が共有する場合（turnover-snapshot が 3 つ・daily-mediable-sync が 2 つ）は、
-#     GitHub の run は入力も仕事の ID も持たないので見分けられない。単位の数 N だけ成功が要る
-#     （成功した順に、曜日の合う単位から埋める）
-# 完了していない単位が 1 つでもあれば終了コード 1。
-# 試験用: CUTOVER_NOW（epoch 秒または ISO）で「いま」を差し替える。
+# 完了の一覧 = 起動役の予定表の仕事 ＋ 予定表に無い自前実行のワークフロー（cutover-lib.sh が GitHub の main から作る）。
+#
+# 「新端末で成功した run」= run が success で、**その全 job** が新端末の実行役で動いたもの。
+# job は全ページを読み、runner_name が空（未割り当て・取り消し）・新端末でない job が 1 つでもあれば数えない。
+#
+# 単位の判定:
+#   - 通常の単位: 新端末で成功した run が SINCE 以降に 1 回あれば完了。曜日限定の単位は、その曜日（日本時間）に
+#     始まった run だけを数える（該当の曜日が来るまで未完了）
+#   - 共有の単位（同じリポジトリ・ワークフローが予定表に N>1 回ある。turnover-snapshot・daily-mediable-sync）:
+#     GitHub の run は入力も仕事の ID も持たず、どの run がどの単位かは見分けられない。そこで **1 晩**
+#     （日本時間の同じ日付。各枠の at〜deadline の窓）に、枠ごとの単位数ぶん以上の新端末での成功があり、
+#     かつ窓の中に失敗・取り消し・時間切れの run が無いときだけ、全単位を完了とする
+#     （起動役は 1 晩に各単位を 1 回ずつ起こすので、1 晩が丸ごと成功なら各単位が成功している。
+#      別々の晩の成功を足し合わせたり、失敗を挟んだ晩を数えたりはしない）
+# 完了していない単位が 1 つでもあれば終了コード 1。試験用: CUTOVER_NOW（epoch 秒または ISO）で「いま」を差し替える。
 set -euo pipefail
 # shellcheck source=cutover-lib.sh disable=SC1091
 . "$(dirname "$0")/cutover-lib.sh"
@@ -41,88 +47,125 @@ runners_json="$(jq -cn --arg r "${runners_arg}" '$r | split(",") | map(gsub("^\\
 cutover_init
 units="$(cutover_units)"
 
-# 新端末の実行役か（名前そのもの、または名前の末尾が -<指定>）
+# 新端末の実行役か（名前そのもの、または名前の末尾が -<指定>）。空の名前は一致しない
 is_new_runner() { # is_new_runner <runner 名>
-  jq -en --arg n "$1" --argjson rs "${runners_json}" '$rs | any(. as $r | $n == $r or ($n | endswith("-" + $r)))' >/dev/null
+  jq -en --arg n "$1" --argjson rs "${runners_json}" '$n != "" and ($rs | any(. as $r | $n == $r or ($n | endswith("-" + $r))))' >/dev/null
 }
 
-# ワークフロー（repo + 名前）ごとに、SINCE 以降に成功した run を集める。
-# qualifying: すべての job が新端末の実行役で動いた run。other: 成功したが新端末ではない run の数
-runs_dir="$(mktemp -d)"
-trap 'rm -rf "${runs_dir}"' EXIT
+# ワークフロー（repo + 名前）ごとに、SINCE 以降の run を集める（成功・失敗とも。共有の判定が失敗を見るため）。
+# 成功した run だけ、全ページの job を読んで on_new（全 job が新端末）を付ける
+runs_file="$(mktemp)"
+trap 'rm -f "${runs_file}"' EXIT
 groups="$(jq -r '[.[] | .repo + " " + .workflow] | unique | .[]' <<<"${units}")"
 while IFS=' ' read -r repo wf; do
   [ -n "${repo}" ] || continue
-  out="${runs_dir}/$(printf '%s' "${repo}/${wf}" | tr '/' '_').jsonl"
-  : >"${out}"
-  runs="$(gh api --paginate "repos/${repo}/actions/workflows/${wf}/runs?created=>=${since_iso}&status=success&per_page=100" \
-    --jq '.workflow_runs[] | {id, created_at, html_url}' | jq -sc '.')"
   while IFS= read -r run; do
     [ -n "${run}" ] || continue
-    rid="$(jq -r '.id' <<<"${run}")"
-    names="$(gh api "repos/${repo}/actions/runs/${rid}/jobs?per_page=100" --jq '[.jobs[] | .runner_name // empty]')"
-    ok=0
-    if [ "$(jq 'length' <<<"${names}")" -gt 0 ]; then
-      ok=1
-      while IFS= read -r n; do
-        is_new_runner "${n}" || { ok=0; break; }
-      done < <(jq -r '.[]' <<<"${names}")
+    on_new=false
+    if [ "$(jq -r '.conclusion' <<<"${run}")" = success ]; then
+      rid="$(jq -r '.id' <<<"${run}")"
+      jobs_n=0
+      on_new=true
+      while IFS= read -r name; do
+        jobs_n=$((jobs_n + 1))
+        is_new_runner "${name}" || on_new=false
+      done < <(gh api --paginate "repos/${repo}/actions/runs/${rid}/jobs?per_page=100" --jq '.jobs[] | (.runner_name // "")')
+      [ "${jobs_n}" -gt 0 ] || on_new=false
     fi
-    jq -c --argjson ok "${ok}" '. + {on_new: ($ok == 1)}' <<<"${run}" >>"${out}"
-  done < <(jq -c '.[]' <<<"${runs}")
+    jq -c --arg k "${repo}/${wf}" --argjson on_new "${on_new}" '. + {key: $k, on_new: $on_new}' <<<"${run}" >>"${runs_file}"
+  done < <(gh api --paginate "repos/${repo}/actions/workflows/${wf}/runs?created=>=${since_iso}&per_page=100" \
+    --jq '.workflow_runs[] | {id, created_at, html_url, conclusion}')
 done <<<"${groups}"
 
-# 判定。units と、集めた run を 1 つの JSON にして jq で割り当てる
-all_runs="$(for f in "${runs_dir}"/*.jsonl; do
-  [ -f "${f}" ] || continue
-  key="$(basename "${f}" .jsonl)"
-  jq -c --arg k "${key}" '. + {key: $k}' "${f}"
-done | jq -sc '.')"
+# 判定。units と集めた run を ruby に渡す（出力: 順番・状態・表示名・理由 を \037 区切り）
+table="$(jq -n --argjson units "${units}" --slurpfile runs "${runs_file}" --argjson since "${since_epoch}" --argjson now "${now_epoch}" \
+  '{units: $units, runs: $runs, since: $since, now: $now}' | /usr/bin/ruby -rjson -rtime -e '
+  input = JSON.parse(STDIN.read)
+  units = input["units"].each_with_index.map { |u, i| u.merge("ord" => i) }
+  runs = input["runs"]
+  since = input["since"]
+  now = input["now"]
+  JST = 32400
+  WD = %w[sun mon tue wed thu fri sat]
+  wd = ->(t) { WD[Time.at(t + JST).utc.wday] }
+  hhmm = ->(s) { h, m = s.split(":").map(&:to_i); h * 3600 + m * 60 }
+  ep = ->(s) { Time.iso8601(s).to_i }
+  ymd = ->(t) { Time.at(t + JST).utc.strftime("%Y-%m-%d") }
+  day0 = ((since + JST) / 86400) * 86400 - JST       # SINCE の日本時間の 0 時
+  dates = (0..((now - day0) / 86400)).map { |i| day0 + i * 86400 }
+  bad = %w[failure cancelled timed_out]
+  rows = []
 
-table="$(jq -r --argjson runs "${all_runs}" --argjson since "${since_epoch}" --argjson now "${now_epoch}" '
-  def key: (.repo + "/" + .workflow) | gsub("/"; "_");
-  def jst_wd: ((fromdate + 32400) | strftime("%a") | ascii_downcase);
-  def hhmm: (split(":") | (.[0] | tonumber) * 3600 + (.[1] | tonumber) * 60);
-  # 単位の曜日の合う該当日が、SINCE から いま までに 1 回でも来たか（枠の時刻を過ぎたものだけ）
-  def due($u):
-    ($u.days) as $d
-    | (((($since + 32400) / 86400) | floor) * 86400 - 32400) as $day0
-    | [ range(0; ((($now - $day0) / 86400) | floor) + 2) | $day0 + . * 86400 + ($u.at | hhmm) ] as $slots
-    | [ $slots[] | select(. >= $since and . <= $now) | select(((. + 32400) | strftime("%a") | ascii_downcase) as $w | $d | index($w)) ] | length > 0;
-  def next_day($u):
-    ($u.days) as $d
-    | (((($now + 32400) / 86400) | floor) * 86400 - 32400) as $day0
-    | [ range(0; 8) | $day0 + . * 86400 + ($u.at | hhmm) | select(. > $now) | select(((. + 32400) | strftime("%a") | ascii_downcase) as $w | $d | index($w)) ] | first
-    | if . == null then "?" else ((. + 32400) | strftime("%Y-%m-%d")) end;
-  (to_entries | map(.value + {ord: .key})) as $units
-  | ($units | map(key) | unique) as $keys
-  | [ $keys[] as $k
-      | ($units | map(select(key == $k))) as $us
-      | ($runs | map(select(.key == $k)) | sort_by(.created_at)) as $rs
-      | ($rs | map(select(.on_new))) as $good
-      | ($rs | map(select(.on_new | not)) | length) as $other
-      # 割り当て: 成功した run を古い順に、曜日の合う未割り当ての単位（曜日限定を先に）へ
-      | ($us | to_entries | sort_by([(.value.days | length == 0), .key])) as $ordered
-      | ( reduce $good[] as $r ({a: {}};
-            ($r.created_at | jst_wd) as $w
-            | .a as $cur
-            | ( [ $ordered[] | select((.value.days | length == 0) or (.value.days | index($w))) | .key | tostring | select($cur[.] | not) ] | first ) as $pick
-            | if $pick == null then . else .a[$pick] = $r end) | .a) as $assign
-      | $us | to_entries[]
-      | . as $e
-      | ($e.value) as $u
-      | ($assign[($e.key | tostring)]) as $r
-      | { ord: $u.ord, slot: $u.slot, repo: $u.repo, workflow: $u.workflow, id: $u.id,
-          shared: (($us | length) > 1), n: ($us | length), got: ($good | length),
-          status: (if $r != null then "done" else "pending" end),
-          detail: (if $r != null then $r.html_url
-                   elif ($u.days | length) > 0 and (due($u) | not) then "対象の曜日（\($u.days | join("・"))）がまだ来ていない（次: \(next_day($u))）"
-                   elif ($good | length) > 0 then "新端末の成功は \($good | length) 回あるが、対象の曜日（\($u.days | join("・"))）のものが無い"
-                   elif $other > 0 then "成功は \($other) 回あるが、新端末の実行役ではない"
-                   else "SINCE 以降の成功なし" end) } ]
-  | sort_by(.ord) | .[]
-  | [ .status, (.slot + " " + (.repo | sub("^[^/]*/"; "")) + " " + .workflow + (if .id != .workflow then " #" + .id else "" end)),
-      (if .shared then "共有 \(.got)/\(.n)  " else "" end) + .detail ] | join("\u001f")' <<<"${units}")"
+  units.group_by { |u| u["repo"] + "/" + u["workflow"] }.each do |key, us|
+    rs = runs.select { |r| r["key"] == key }.sort_by { |r| r["created_at"] }
+    good = rs.select { |r| r["conclusion"] == "success" && r["on_new"] }
+    other = rs.count { |r| r["conclusion"] == "success" && !r["on_new"] }
+    if us.size == 1
+      u = us[0]
+      days = u["days"]
+      run = good.find { |r| days.empty? || days.include?(wd.(ep.(r["created_at"]))) }
+      due = days.empty? || dates.any? { |d|
+        t = d + hhmm.(u["at"])
+        t >= since && t <= now && days.include?(wd.(t))
+      }
+      detail =
+        if run then run["html_url"]
+        elsif !due
+          nxt = (0..7).map { |i| ((now + JST) / 86400) * 86400 - JST + i * 86400 + hhmm.(u["at"]) }
+                      .find { |t| t > now && days.include?(wd.(t)) }
+          "対象の曜日（#{days.join("・")}）がまだ来ていない（次: #{nxt ? ymd.(nxt) : "?"}）"
+        elsif !good.empty? then "新端末の成功は #{good.size} 回あるが、対象の曜日（#{days.join("・")}）のものが無い"
+        elsif other > 0 then "成功は #{other} 回あるが、新端末の実行役ではない"
+        else "SINCE 以降の成功なし" end
+      rows << [u["ord"], run ? "done" : "pending", u, detail]
+      next
+    end
+
+    # 共有: 1 晩（日本時間の同じ日付）の窓に、枠ごとの単位数ぶんの新端末での成功があり、失敗が無い
+    chosen = nil
+    fail_date = nil
+    best = [-1, nil]
+    dates.each do |d|
+      w = wd.(d)
+      next unless us.all? { |u| u["days"].empty? || u["days"].include?(w) }
+      per_slot = us.group_by { |u| u["slot"] }.map do |_slot, su|
+        a = d + hhmm.(su[0]["at"])
+        b = d + hhmm.(su[0]["deadline"])
+        win = rs.select { |r| t = ep.(r["created_at"]); t >= a && t <= b }
+        [su, win.select { |r| r["conclusion"] == "success" && r["on_new"] }, win.select { |r| bad.include?(r["conclusion"]) }]
+      end
+      if per_slot.any? { |_, _, f| !f.empty? }
+        fail_date ||= d
+        next
+      end
+      k = per_slot.sum { |su, g, _| [g.size, su.size].min }
+      if k == us.size
+        chosen = [d, per_slot]
+        break
+      end
+      best = [k, d] if k > best[0]
+    end
+    assign = {}
+    if chosen
+      chosen[1].each { |su, g, _| su.sort_by { |u| u["ord"] }.each_with_index { |u, i| assign[u["ord"]] = g[i]["html_url"] } }
+    end
+    why =
+      if fail_date then "#{ymd.(fail_date)} の夜の窓に失敗・取り消し・時間切れの run があるため数えない"
+      elsif !good.empty? then "1 晩に必要な成功がそろっていない（最多 #{[best[0], 0].max}/#{us.size}。別々の晩の成功は足さない）"
+      elsif other > 0 then "成功は #{other} 回あるが、新端末の実行役ではない"
+      else "SINCE 以降の成功なし" end
+    us.each do |u|
+      url = assign[u["ord"]]
+      ok = !url.nil?
+      rows << [u["ord"], ok ? "done" : "pending", u, "共有 #{ok ? us.size : [best[0], 0].max}/#{us.size}  #{ok ? url : why}"]
+    end
+  end
+
+  rows.sort_by { |r| r[0] }.each do |_, st, u, detail|
+    label = "#{u["slot"]} #{u["repo"].sub(/^[^\/]*\//, "")} #{u["workflow"]}#{u["id"] != u["workflow"] ? " #" + u["id"] : ""}"
+    puts [st, label, detail].join("\x1f")
+  end
+')"
 
 echo "==> 完了の一覧（SINCE=${since_iso}、新端末の実行役=${runners_arg}）"
 done_n=0
