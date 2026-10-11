@@ -93,6 +93,13 @@ CLI では変更できない設定です。[手動作業](#手動作業)の表�
 make playbook ANSIBLE_FLAGS='--ask-become-pass'
 ```
 
+Claude にもログインします（ログインはキーチェーンに入るので、旧い Mac から運べません。点検は全 `PHASE` でこのログインを確かめます）。
+
+```sh
+claude auth login
+claude auth status   # "loggedIn": true になれば済み
+```
+
 ### 7. 点検する
 
 この時点では、runner と夜間の起動はまだ止めてあり、秘密と処理済みの記録も旧い Mac から運んでいません。
