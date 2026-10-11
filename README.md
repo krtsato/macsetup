@@ -68,7 +68,8 @@ Homebrew と Ansible を入れ（`make bootstrap`）、続けて Ansible のプ�
 make setup ANSIBLE_FLAGS='--ask-become-pass'
 ```
 
-パスワードを聞かれたくない場合は、次のように渡します。
+標準はこの `--ask-become-pass`（その場でパスワードを尋ねる）です。
+どうしても尋ねられたくない場合だけ、次のように渡せます。**パスワードがシェルの履歴とプロセスの一覧に残る**ので、使った後は履歴から消してください。
 
 ```sh
 make setup EXTRA_VARS="sudo_pass=YOUR_PASSWORD"
@@ -94,11 +95,16 @@ make playbook ANSIBLE_FLAGS='--ask-become-pass'
 
 ### 7. 点検する
 
+この時点では、runner と夜間の起動はまだ止めてあり、秘密と処理済みの記録も旧い Mac から運んでいません。
+その状態を期待する `PHASE=pre-import` で点検します。
+
 ```sh
-make doctor
+make doctor PHASE=pre-import
 ```
 
 うまくいった印: 最後の一覧で失敗が 0 件です。失敗があれば項目名つきで表示されるので、直してもう一度流します。
+`PHASE` を付けない `make doctor`（稼働中の点検）は、[docs/cutover.md](docs/cutover.md) の手順で runner と夜間の起動を動かした後に使います。
+それより前に流すと、runner が online でない・夜間の起動が読み込まれていない、として失敗するのが正しい結果です。
 `make doctor` は読むだけで、何も変更しません。使い方の詳細は [docs/doctor.md](docs/doctor.md) にあります。
 
 ## Mac を買い替えて夜間の自動実行を移す
@@ -144,7 +150,7 @@ make doctor
 
 ### EXTRA_VARS の指定例
 
-Homebrew/macOS の sudo パスワードと GitHub 鍵パラメータをまとめて指定し、完全非対話で実行する例です。
+`gh` にログイン済みのとき、sudo パスワードと GitHub 鍵のパラメータの入力を省く例です（`gh` に未ログインだと、`github` ロールがログインを待って止まります）。パスワードがシェルの履歴とプロセスの一覧に残る点は、上の注意と同じです。
 
 ```sh
 make setup \
