@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # runners 役割の検査。偽の gh・launchctl・config.sh・svc.sh を一時ディレクトリに置き、本物の登録鍵や
-# 本物の実行役には一切触れずに確かめる。
+# 本物の runner には一切触れずに確かめる。
 # (a) 新規: 登録の引数・雛形と plist が SessionCreate=false・.path の先頭が shims・無効なら起動しない・鍵が出力に出ない
 # (b) SHA-256 の不一致（と hash の欠落）は失敗し、展開しない
 # (c) runners_enabled=true で起動は 1 回だけ（2 回目は呼ばない）

@@ -18,7 +18,7 @@
 
    ```sh
    cd ~/dev/me/macsetup
-   ./scripts/install-clt-brew-ansible.sh
+   ./scripts/install-brew-ansible.sh
    ```
 
 4. プレイブックを実行する（非対話でパスワード供給）。
@@ -305,7 +305,7 @@ CLI では変更できない、または sudo 権限が必要な項目は GUI �
 | Terminal フォント | Terminal.app のプロファイルで VSCode の settings.json と同等の Nerd Font（例: FiraCodeNerdFontCompleteM-Retina）を手動設定 |
 | デフォルトシェル | Homebrew の zsh (`/opt/homebrew/bin/zsh`) があればそれを設定。無ければ `/bin/zsh` |
 | Spotlight ショートカット | [⌘Space を無効化](https://support.apple.com/ja-jp/guide/mac-help/mchlp2864/14.0/mac/14.0) |
-| moomoo OpenD | <https://www.moomoo.com/download/OpenAPI> から GUI 版を入れ、ログインと二段階認証、待受を `127.0.0.1`・ポート `11111` に、**ログイン項目に登録**（再起動後も火〜土の夜間に要る）。**登録後に一度再起動し、`make doctor` で待受とログイン項目を確かめる**。詳細は trade-moomoo の README |
+| moomoo OpenD | <https://www.moomoo.com/download/OpenAPI> から GUI 版を入れ、ログインと二段階認証、待受を `127.0.0.1`・ポート `11111` に、**ログイン項目に登録**（再起動後も火〜土の夜間に要る）。**登録後に一度再起動し、`make doctor PHASE=pre-import` で待受とログイン項目を確かめる**（切り替えの前なので `PHASE` を付ける）。詳細は trade-moomoo の README |
 | Docker Desktop | 初回起動の同意、Settings → Resources → Network → **Enable host networking**（moomoo のコンテナが OpenD に届くため）。その後 `make playbook` を流し直すと image が作られる |
 
 iCloud 同期項目

@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
-# 秘密の持ち出し・持ち込み（段 2）の検査。すべて一時のホームと偽の中身で行い、本物のホームは読まない。
-# 入口は Makefile の make secrets-*（2 段）。偽の launchctl・gh を PATH の先頭に置く。合言葉はテスト専用の固定値を -stdinpass で渡す。
+# 秘密の持ち出し・持ち込み（make secrets-*）の検査。すべて一時のホームと偽の中身で行い、本物のホームは読まない。
+# 入口は Makefile の make secrets-*（Ansible で入力を用意してから secrets.sh を直接実行する 2 回構成）。偽の launchctl・gh を PATH の先頭に置く。合言葉はテスト専用の固定値を -stdinpass で渡す。
 # (a) 往復 (b) 衝突で何も変えない (c) 配置の途中の失敗で戻す (d) 許可外の物があるイメージを拒否
 # (e) export の拒否（読み込み済み・出力先） (f) restore と退避・復元 (g) 毎回取り外される
 # (h) 出力にプロファイル名・中身・合言葉が出ない (i) プロファイル名を読めなければ名指しで失敗
@@ -132,7 +132,7 @@ make_home() {
   mkdir -p "${h}/.config/mcp-mediable/captions"
   printf 'SECRET-CONTENT-decoy\n' >"${h}/.config/mcp-mediable/captions/x.txt"
   printf 'SECRET-CONTENT-decoy\n' >"${h}/.config/mcp-note/notebooklm.cookies.txt"
-  # 停止の確認が見る実行役の .service（運ばれない）
+  # 停止の確認が見る runner の .service（運ばれない）
   while IFS=$'\t' read -r dir label; do
     mkdir -p "${h}/${dir}"
     echo "${h}/Library/LaunchAgents/actions.runner.test.${label}.plist" >"${h}/${dir}/.service"
@@ -182,7 +182,7 @@ snapshot() { # snapshot <dir>: パス・種別・権限・中身の要約（比�
 }
 
 # ===================================================================================
-log "準備: 旧端末の偽のホーム"
+log "準備: 旧い Mac の偽のホーム"
 home_a="${tmp}/home-a"
 make_home "${home_a}"
 cp "${tmp}/expected.files" "${tmp}/expected-a.files"
@@ -401,8 +401,8 @@ assert "(q2) default: 拒否" rc_is_nonzero q2
 assert "(q2) 理由" contains "${tmp}/q2.out" "default は予約名"
 assert "(q2) イメージを作らない" test ! -e "${tmp}/out/q2.dmg"
 
-# (k) 実行役の停止確認は fail-closed ---------------------------------------------------------
-log "(k) 実行役: .runner が有るのに .service が無い／ Runner.Listener が動いている"
+# (k) runner の停止確認は fail-closed ---------------------------------------------------------
+log "(k) runner: .runner が有るのに .service が無い／ Runner.Listener が動いている"
 HOME_UNDER_TEST="${home_a}"
 rdir="dev/me/mcp-note/actions-runners/magazine-sync"
 cp "${home_a}/${rdir}/.service" "${tmp}/service.save"
@@ -410,7 +410,7 @@ echo '{}' >"${home_a}/${rdir}/.runner"
 rm -f "${home_a:?}/${rdir:?}/.service"
 run_secrets k1 export "${tmp}/out/k1.dmg"
 assert "(k1) .service が無い: 拒否" rc_is_nonzero k1
-assert "(k1) 実行役を名指し" contains "${tmp}/k1.out" "mcp-note/magazine-sync"
+assert "(k1) runner を名指し" contains "${tmp}/k1.out" "mcp-note/magazine-sync"
 assert "(k1) 理由" contains "${tmp}/k1.out" ".service が無い"
 assert "(k1) イメージを作らない" test ! -e "${tmp}/out/k1.dmg"
 cp "${tmp}/service.save" "${home_a}/${rdir}/.service"

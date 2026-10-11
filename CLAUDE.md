@@ -3,7 +3,16 @@
 macOS 自動セットアップリポジトリ。Ansible ＋ シェルスクリプト ＋ Makefile で新しい Mac を開発環境にする。
 設定ファイル自体は別リポジトリ（`~/dev/me/dotfiles`）が持ち、ここは**入れる手順**だけを持つ。
 
-このファイルが正本。`AGENTS.md` と `.github/copilot-instructions.md` はここへのシンボリックリンク。
+このファイルが AI エージェント向けの正本。`AGENTS.md` と `.github/copilot-instructions.md` はここへのシンボリックリンク
+（壊さない）。人間向けの手順は次のファイルにあり、ここへ複製しない。
+
+| 知りたいこと | 読む場所 |
+| --- | --- |
+| 新しい Mac を用意する手順・命令の一覧・ロール・手動作業 | [README.md](README.md) |
+| 買い替えで夜間の自動実行を移す手順（14 手順・戻し方） | [docs/cutover.md](docs/cutover.md) |
+| 点検 `make doctor` の見るものと PHASE ごとの期待 | [docs/doctor.md](docs/doctor.md) |
+| 秘密と記録を運ぶ `make secrets-*` の動きと決まり | [docs/secrets.md](docs/secrets.md) |
+| 入れるパッケージの一覧 | [.github/instructions/auto-setup/auto-setup.md](.github/instructions/auto-setup/auto-setup.md) |
 
 ## コマンド
 
@@ -17,16 +26,16 @@ make playbook ANSIBLE_FLAGS='--ask-become-pass'
 # 点検（読むだけ。PHASE は pre-import / cutover / ready、既定 ready）
 make doctor PHASE=ready
 
-# 秘密と記録を暗号化イメージで運ぶ（段 2。list は読むだけ。合言葉は hdiutil が端末で尋ねる）
+# 秘密と記録を暗号化イメージで運ぶ（list は読むだけ。合言葉は hdiutil が端末で尋ねる）
 make secrets-list
 make secrets-export OUT=<リポジトリの外の絶対パス.dmg>
 make secrets-import IMAGE=<絶対パス.dmg>
 make secrets-restore IMAGE=<絶対パス.dmg>
 make secrets-recover   # 強制終了で止まった import・restore の跡を配置前へ戻す
 
-# 切り替え（段 6。手順書は docs/cutover.md。どちらも読むだけ）
+# 切り替えの道具（どちらも読むだけ。手順は docs/cutover.md）
 make cutover-trial                                  # 試し実行の gh workflow run を出す（起動はしない）
-make cutover-check SINCE=<YYYY-MM-DD> RUNNERS=<新端末の実行役の名前,… または末尾>   # 完了の一覧 21 単位の判定
+make cutover-check SINCE=<YYYY-MM-DD> RUNNERS=<新しい Mac の runner の名前,… または末尾>   # 完了の一覧（確認対象 21 件）の判定
 
 # Markdown lint（編集後に必ず）
 npx markdownlint-cli2 --config ~/dev/me/dotfiles/.markdownlint.yaml <file>
@@ -36,7 +45,7 @@ npx markdownlint-cli2 --config ~/dev/me/dotfiles/.markdownlint.yaml <file>
 
 `make setup` → `scripts/install-brew-ansible.sh`（bootstrap）→ `ansible-playbook ansible/exec.yaml`
 
-## ロールの順序
+## ロールの順序と依存
 
 | 順 | ロール | すること |
 | --- | --- | --- |
@@ -51,11 +60,32 @@ npx markdownlint-cli2 --config ~/dev/me/dotfiles/.markdownlint.yaml <file>
 | 9 | `go` | `go install` でバイナリ |
 | 10 | `npm` | `npm install -g` でグローバルパッケージ（textlint など） |
 | 11 | `vscode` | `install-vscode-extensions.sh` で拡張機能 |
-| 12 | `runners` | 自前の実行役 5 体を登録し、常駐の設定（plist）まで作る。**起動は `runners_enabled=true` のときだけ**（既定は停止。動いているものは決して止めない） |
+| 12 | `runners` | 自前の runner（GitHub Actions の self-hosted runner）5 体を登録し、常駐の設定（plist）まで作る。**起動は `runners_enabled=true` のときだけ**（既定は停止。動いているものは決して止めない） |
 | 13 | `nightly_launcher` | `krtsato/watcher` を取得し、その `plan.json` の枠ごとに LaunchAgent を生成・登録。**読み込むのは `nightly_launcher_enabled=true` か、既に読み込み済みの枠だけ** |
-| 14 | `moomoo` | moomoo の接続役 OpenD のログ掃除 LaunchAgent を入れ、SDK のコンテナ image が無ければ作る。OpenD 本体は手で入れる |
+| 14 | `moomoo` | OpenD（moomoo の API ゲートウェイ）のログ掃除 LaunchAgent を入れ、SDK のコンテナ image が無ければ作る。OpenD 本体は手で入れる |
 
-順序には依存がある。`nightly_launcher` は `gh` の認証（5）と `go`（9）が済んでいる必要がある。`repos` は `gh` の認証（5）の後。`runners` は `gh` の認証（5）と複製（6）・mise（7）の後。`moomoo` は trade-moomoo の複製が要る。
+`exec.yaml` に入らないロール: `doctor`（`ansible/doctor.yaml`）・`secrets`（`ansible/secrets.yaml`）。
+
+順序には依存がある。
+
+| ロール | 先に済んでいること |
+| --- | --- |
+| `repos` | `gh` の認証（5）の後 |
+| `runners` | `gh` の認証（5）と複製（6）・mise（7）の後 |
+| `nightly_launcher` | `gh` の認証（5）と `go`（9） |
+| `moomoo` | trade-moomoo の複製（6） |
+
+## 壊してはいけない決まり
+
+| 決まり | 理由 |
+| --- | --- |
+| **公開リポジトリ**なので、秘密の値・イメージ・ハッシュ・NotebookLM のプロファイル名をコミットしない・出力へ出さない | 公開されて漏れる |
+| `make doctor` は**読むだけ**（全タスク `changed_when: false`）。`exec.yaml` に入れない | 点検が状態を変えると、点検の結果が信用できなくなる |
+| runner と夜間の起動は**既定で停止**（`runners_enabled: false`・`nightly_launcher_enabled: false`）。動いているものは決して止めない | 旧い Mac と同じ夜を二重に起動しない |
+| secrets の合言葉は Ansible を通さない（引数・環境変数にも渡さない）。`hdiutil` が端末で尋ねる | Ansible・ログ・プロセス一覧に合言葉が残る |
+| 切り替えの道具（`cutover-trial`・`cutover-check`）は読むだけ。起動も書き込みもしない | 本番の仕事を誤って動かさない |
+| 時刻・順序・依存・曜日の正本は watcher の `plan.json`。ここへ書き写さない | 2 か所に書けば片方が古くなる |
+| `AGENTS.md` と `.github/copilot-instructions.md` は `CLAUDE.md` へのシンボリックリンクのまま | 正本を 1 つにする |
 
 ## パッケージを足すとき — 3 か所を揃える
 
@@ -70,7 +100,7 @@ npx markdownlint-cli2 --config ~/dev/me/dotfiles/.markdownlint.yaml <file>
 **書くのはコマンド名ではなく formula 名。** 両者が違うものがある。たとえば Google Workspace の `gws` は
 `googleworkspace-cli` で入れる。`brew install gws` は git リポジトリをまとめて扱う別の道具で、同じ `gws` を入れて衝突する。
 
-## 夜の起動 — 正本は watcher にある
+## 夜間の起動 — 正本は watcher にある
 
 投資のパイプラインは GitHub の定期実行ではなく**この Mac から**起こす（GitHub の予定は 12 分〜10 時間遅れ、
 時刻を選べない）。つまり **Mac の設定がパイプラインの一部**で、買い替えて忘れると夜が丸ごと消える。
@@ -78,80 +108,81 @@ npx markdownlint-cli2 --config ~/dev/me/dotfiles/.markdownlint.yaml <file>
 | | |
 | --- | --- |
 | **時刻・順序・依存・曜日の正本** | **`krtsato/watcher` の `cmd/nightly-launcher/plan.json`**。ここには書かない |
-| この役がすること | その `plan.json` を読み、枠ごとに LaunchAgent を生成して登録する |
+| `nightly_launcher` ロールがすること | その `plan.json` を読み、枠ごとに LaunchAgent を生成して登録する |
 | 設計と運用 | [watcher の docs/launcher.md](https://github.com/krtsato/watcher/blob/main/docs/launcher.md) |
 
 **`plan.json` を変えたら `make playbook` を流す。** LaunchAgent は設定時に時刻を書き出すので、
-流し忘れると Mac は古い時刻で起き、起動役は「枠の時刻から離れすぎています」と言って**毎晩何もしない**。
+流し忘れると Mac は古い時刻で起き、夜間の起動は「枠の時刻から離れすぎています」と言って**毎晩何もしない**。
 見張りが数日後に報告するが、気づくのは遅れる。
 
-## 実行役と起動役 — 停止した状態で用意する
+## runner と夜間の起動 — 停止した状態で用意する
 
-新しい Mac では**登録と常駐の設定までを作り、起動しない**（既定 `runners_enabled: false`・`nightly_launcher_enabled: false`）。
-旧端末と同じ夜を二重に起動しないよう、起動は切り替えの手順（段 6）の最後に、旧端末が空になったのを確かめてから行う。
+新しい Mac では**登録と常駐の設定までを作り、起動しない**。
+旧い Mac と同じ夜を二重に起動しないよう、起動は切り替えの手順（[docs/cutover.md](docs/cutover.md) の手順 11・12）で、
+旧い Mac が空になったのを確かめてから行う。
 
 ```sh
-# 切り替えの時だけ。実行役と起動役を起動する
+# 切り替えの時だけ。runner と夜間の起動を起動する
 make playbook EXTRA_VARS='runners_enabled=true nightly_launcher_enabled=true'
 ```
 
 | 決まり | |
 | --- | --- |
 | 一覧 | `roles/runners/defaults/main.yaml` の `runners_list`。`roles/doctor/vars/main.yaml` の `doctor_runners` と同じ内容（足し引きしたら両方直す） |
-| 名前 | `<ラベル>-<端末名>`（`scutil --get LocalHostName`、`runners_name_suffix` で上書き）。`--replace` は使わない |
+| 名前 | `<ラベル>-<Mac の名前>`（`scutil --get LocalHostName`、`runners_name_suffix` で上書き）。`--replace` は使わない |
 | 取得 | `runners_version`（既定 `latest`、`2.338.0` のように固定も可）の配布物を `gh api` で取り、リリース本文の SHA-256 と照合。一致しない・無いときは展開せず失敗。固定しても自動更新は有効 |
 | 途中の跡 | `.runner` が無いのに置き場が空でないときは、検証していない `config.sh` へ鍵を渡さないよう失敗する（消すのは人） |
-| 冪等 | `.runner` がある（登録済み）なら取得も登録もしない。この Mac で流しても既存の実行役は止まらない |
+| 冪等 | `.runner` がある（登録済み）なら取得も登録もしない。この Mac で流しても既存の runner は止まらない |
 | 雛形 | 実体のある `bin*/actions.runner.plist.template` を `SessionCreate=false` に直す。自動更新で増える `bin.<版>` の雛形は true に戻るが、点検が見るのは常駐側の plist |
 | `.path` | 先頭を mise の shims にする（無ければ作り、あれば残りを保って先頭に足す）。`.env` は触らない |
 | 起動 | `runners_enabled` が真のときだけ `launchctl bootstrap` し、今回起動したものは GitHub 上で online になるまで待つ（`runners_online_timeout` 既定 120 秒・`runners_online_interval` 既定 5 秒。来なければ名前つきで失敗）。偽のときは何もしない |
-| 起動役 | plist は常に作る。読み込むのは `nightly_launcher_enabled` が真か、その枠が既に読み込み済みのとき（この Mac は `plan.json` の変更後に読み直す動きを保つ） |
+| 夜間の起動 | plist は常に作る。読み込むのは `nightly_launcher_enabled` が真か、その枠が既に読み込み済みのとき（この Mac は `plan.json` の変更後に読み直す動きを保つ） |
 | 登録鍵 | 使い捨て。`no_log: true` で、`config.sh` へ渡すだけ。ファイルにもログにも残さない |
-| 検査 | `scripts/test-nightly-launcher.sh`（起動役の読み込み規則 4 通り）と `scripts/test-runners.sh`（偽の `gh`・`launchctl`・`config.sh` で、登録の引数・鍵が出力に出ないこと・SHA 不一致での失敗・起動が 1 回だけ・online 待ち・版の固定・途中の跡で止まること・登録済みで何もしないことを確かめる） |
+| 検査 | `scripts/test-nightly-launcher.sh`（夜間の起動の読み込み規則 4 通り）と `scripts/test-runners.sh`（偽の `gh`・`launchctl`・`config.sh` で、登録の引数・鍵が出力に出ないこと・SHA 不一致での失敗・起動が 1 回だけ・online 待ち・版の固定・途中の跡で止まること・登録済みで何もしないことを確かめる） |
 
-## 切り替えの手順書と道具 — 段 6
+## 切り替えの道具
 
-手順書は [docs/cutover.md](docs/cutover.md)（14 手順・戻し方）。道具は読むだけの 2 本で、起動も書き込みもしない。
+手順書は [docs/cutover.md](docs/cutover.md)。道具は読むだけの 2 本で、起動も書き込みもしない。
 
 | 項目 | 場所・決まり |
 | --- | --- |
-| 共有の部品 | `scripts/cutover-lib.sh`。完了の一覧 = 起動役の予定表（watcher の `cmd/nightly-launcher/plan.json`）の仕事 ＋ 予定表に無い自前実行のワークフロー。実行役を置くリポジトリは `roles/runners/defaults` の `runners_list` から読み、予定表とワークフローは各複製を `git fetch origin main` して **origin/main** から `git show` で読む（作業ツリーは読まない。複製・fetch・workflows の欠けは名指しで失敗。一覧を書き写さない） |
+| 共有の部品 | `scripts/cutover-lib.sh`。完了の一覧 = 夜間の起動の予定表（watcher の `cmd/nightly-launcher/plan.json`）の仕事 ＋ 予定表に無い自前実行のワークフロー。runner を置くリポジトリは `roles/runners/defaults` の `runners_list` から読み、予定表とワークフローは各複製を `git fetch origin main` して **origin/main** から `git show` で読む（作業ツリーは読まない。複製・fetch・workflows の欠けは名指しで失敗。一覧を書き写さない） |
 | `make cutover-trial` | `scripts/cutover-trial.sh`。`dry_run` の入力があれば `dry_run=true`（＋あれば `skip_audio`・`audio_dry_run`・件数=1）、入力が無く全 job の権限が**明示的に**読み取りだけなら入力なし（`permissions` の省略は対象外）。`dry_run` でも副作用が残るもの（`digest-author`・`note-author`・`daily-magazine-sync`・`daily-mediable-sync`・`ledger-sync`）は `cutover_trial_excluded` に理由つきで固定。出すだけ（今は試し実行 11・夜間 7） |
-| `make cutover-check` | `scripts/cutover-check.sh`。各単位が SINCE 以降に新端末の実行役だけで成功したかを、run と**全ページの job** の `runner_name` で判定（空・旧端末の job が 1 つでもあれば数えない）。曜日限定は該当の曜日（日本時間）の run だけ数える。**同じワークフローを共有する単位は GitHub から見分けられない**ので、**1 晩**（各枠の `at`〜`deadline` の窓）に単位数ぶんの新端末での成功があり、窓に新端末での成功以外の run（失敗・取り消し・実行中・旧端末での成功など）が無いときだけ全単位を done にする（別々の晩は足さない。`turnover-snapshot` 3・`daily-mediable-sync` 2）。pending があれば 0 以外で終わる |
-| 検査 | `scripts/test-cutover.sh`（21 単位・試し実行 11 本・夜間 7 本を固定して定義の変化に気づく。判定の論理は偽の `gh`、読み先は一時の git リポジトリ） |
+| `make cutover-check` | `scripts/cutover-check.sh`。各確認対象が SINCE 以降に新しい Mac の runner だけで成功したかを、run と**全ページの job** の `runner_name` で判定（空・旧い Mac の job が 1 つでもあれば数えない）。曜日限定は該当の曜日（日本時間）の run だけ数える。**同じワークフローを共有する確認対象は GitHub から見分けられない**ので、**1 晩**（各枠の `at`〜`deadline` の窓）に確認対象の数ぶんの新しい Mac での成功があり、窓に新しい Mac での成功以外の run（失敗・取り消し・実行中・旧い Mac での成功など）が無いときだけ全確認対象を done にする（別々の晩は足さない。`turnover-snapshot` 3・`daily-mediable-sync` 2）。pending があれば 0 以外で終わる |
+| 検査 | `scripts/test-cutover.sh`（確認対象 21 件・試し実行 11 本・夜間 7 本を固定して定義の変化に気づく。判定の論理は偽の `gh`、読み先は一時の git リポジトリ） |
 
 - 完了の判定に**試し実行は入れない**（run に入力は残らず、`dry_run` の成功も数えてしまう）。SINCE は試し実行の翌日にする
 - ワークフローや予定表を意図して変えたら `scripts/test-cutover.sh` の期待を直す
 
 ## 点検 `make doctor`
 
-`ansible/doctor.yaml`（ロール `doctor`）。**読むだけで何も変更しない**（全タスク `changed_when: false`）。`exec.yaml` には入れない。
+`ansible/doctor.yaml`（ロール `doctor`）。読むだけで何も変更しない。見るものと PHASE ごとの期待は [docs/doctor.md](docs/doctor.md)。
 
 | 項目 | 場所・決まり |
 | --- | --- |
-| 一覧の正本 | `ansible/roles/doctor/vars/main.yaml`（パス・分類・権限・用途・実行役・入口ファイル。**中身の値は持たない**） |
+| 一覧の正本 | `ansible/roles/doctor/vars/main.yaml`（パス・分類・権限・用途・runner・入口ファイル。**中身の値は持たない**） |
 | 点検の本体 | `ansible/roles/doctor/files/checks.sh`（グループごとに `FAIL\|`・`WARN\|` の行を出し、Ansible が溜めて最後に一覧と失敗にする） |
-| 段階 | `doctor_phase` = `pre-import` / `cutover` / `ready`（既定 `ready`、不正値は即失敗） |
+| PHASE | `doctor_phase` = `pre-import` / `cutover` / `ready`（既定 `ready`、不正値は即失敗） |
 | テスト用の差し込み | `doctor_home`・`doctor_launchagents_dir`・`doctor_extra_config_files`・`doctor_clone_dir_overrides` |
 | 壊して確かめる | `scripts/test-doctor.sh`（欠けた必須ファイル・存在しない複製・`SessionCreate=true` の plist を名指しで検出するか） |
 
 - **公開リポジトリなので**秘密の値・NotebookLM のプロファイル名を書かない。プロファイル名と複製の場所は GitHub の変数から実行時に読む
 - 入口ファイルの一覧は、ワークフローの `$X_CLONE_DIR/...`・`git archive origin/main`・`git show` の使い方から導出する。呼び出し先が動いたらここも直す
 - プロファイル名は `checks.sh` の shell 変数の中だけで持ち、出力・Ansible の変数へ出さない（`プロファイル1` などの別名で表示。`scripts/test-doctor.sh` が全出力を探して 0 件を確かめる）
-- ログインは実行役と同じ環境（`env -i` ＋ 実行役の `.path`）でも確かめる。キーチェーンのセッションの差は plist の `SessionCreate=false` の点検が受け持ち、launchd から起こした process での確認は段 6 の実際の実行でしかできない（launchd の仕事は作らない）
+- ログインは runner と同じ環境（`env -i` ＋ runner の `.path`）でも確かめる。キーチェーンのセッションの差は plist の `SessionCreate=false` の点検が受け持ち、launchd から起こした process での確認は切り替えの試し実行と夜間の本番でしかできない（launchd の仕事は作らない）
 - OpenD は日本時間の日時で判定する。ready では土曜 01:30〜月曜 01:30 以外の閉鎖を失敗にする（`DOCTOR_NOW` / `doctor_now` で上書き可）
 - GitHub の秘密 6 組は「移行に必須の組」であって全設定の棚卸しではない
 
 ## 秘密の持ち出し・持ち込み `make secrets-*`
 
-`ansible/secrets.yaml`（ロール `secrets`）は入力 JSON を 0600 の一時ファイルへ書くだけ（`secrets_action=prepare`）。
-本体は `ansible/roles/secrets/files/secrets.sh` で、Makefile が**端末へ繋いだまま直接実行**する（2 段。一時ファイルは recipe の trap で消す）。
+動きと決まりの全体は [docs/secrets.md](docs/secrets.md)。`ansible/secrets.yaml`（ロール `secrets`）は入力 JSON を 0600 の一時ファイルへ書くだけ（`secrets_action=prepare`）。
+本体は `ansible/roles/secrets/files/secrets.sh` で、Makefile が**端末へ繋いだまま直接実行**する（一時ファイルは recipe の trap で消す）。
 **対話の端末から流す。Ansible・CI からは不可**（子プロセスは制御端末を持たず、`hdiutil` が合言葉を尋ねられない）。`exec.yaml` には入れない。
 
 | 項目 | 場所・決まり |
 | --- | --- |
 | 一覧の正本 | `roles/doctor/vars/main.yaml` の `doctor_config_files`（複製しない）。`{profile}` は `NOTEBOOKLM_PROFILE` から実行時に展開し、`secrets.sh` の shell 変数の中だけで持つ（出力は `<プロファイル1>` の別名） |
-| 動作 | `list`（表示のみ）/ `export`（旧端末。実行役 5 体・起動役 2 枠が読み込まれていたら拒否）/ `import`（衝突は 1 件でもあれば何も変えない。記録をたどって全部か何もなしか）/ `restore`（退避してから置換）/ `recover`（強制終了の跡を戻す） |
+| 動作 | `list`（表示のみ）/ `export`（旧い Mac。runner 5 体・夜間の起動 2 枠が読み込まれていたら拒否）/ `import`（衝突は 1 件でもあれば何も変えない。記録をたどって全部か何もなしか）/ `restore`（退避してから置換）/ `recover`（強制終了の跡を戻す） |
 | 復旧 | 変更の前に意図を journal へ書く（書き込み先行）。復旧は実際の状態で各行を判断し冪等。跡（`.macsetup-import.*`）が残る間は import・restore を拒否して `make secrets-recover` を案内 |
 | 停止の確認 | 読み込み済みの label・`.runner` が有るのに `.service` が無い・`bin*/Runner.Listener` が動いている、のどれでも拒否（確かめられなければ止まっているとみなさない） |
 | 出力 | 全出力を別名への置き換えフィルタ経由にする（長い名前から）。道具のエラーのパスにも本物の名前を出さない |
@@ -180,10 +211,26 @@ make playbook EXTRA_VARS='runners_enabled=true nightly_launcher_enabled=true'
 ### 言語
 
 **コメント・コミットメッセージ・ドキュメントはすべて日本語。**
+文書とコメント、利用者に見えるメッセージには、この文書に無い造語（作業中だけ通じる呼び名・番号付きの工程名）を使わない。
+読み手が知っている語（runner・OpenD・LaunchAgent・`make doctor` など）で書く。
 
 ### Markdown
 
 編集後に必ず `npx markdownlint-cli2 --config ~/dev/me/dotfiles/.markdownlint.yaml <file>`。
+
+## 変更後に流す検査
+
+| 命令 | 確かめること |
+| --- | --- |
+| `scripts/test-repos.sh` | 手元の複製の取得 |
+| `scripts/test-runners.sh` | runner の登録 |
+| `scripts/test-nightly-launcher.sh` | 夜間の起動の読み込み規則 |
+| `scripts/test-cutover.sh` | 切り替えの道具 |
+| `scripts/test-secrets.sh` | 秘密と記録の持ち出し・持ち込み |
+| `scripts/test-doctor.sh` | 点検（遅い） |
+| `make doctor` | この Mac の点検で失敗 0 件 |
+
+利用者に見えるメッセージを変えたら、それを確かめるテスト（`scripts/test-*.sh`）の期待も同じ変更で直す。
 
 ## ディレクトリ構成
 
@@ -191,11 +238,13 @@ make playbook EXTRA_VARS='runners_enabled=true nightly_launcher_enabled=true'
 macsetup/
 ├── Makefile                    # オーケストレーション
 ├── docs/
-│   └── cutover.md              # 切り替えの手順書（段 6）
+│   ├── cutover.md              # 切り替えの手順書
+│   ├── doctor.md               # 点検 make doctor の詳細
+│   └── secrets.md              # 秘密と記録を運ぶ make secrets-* の詳細
 ├── ansible/
 │   ├── exec.yaml               # メインプレイブック（ロールの順序はここ）
 │   ├── doctor.yaml             # 点検プレイブック（読むだけ）
-│   ├── secrets.yaml            # 秘密と記録の持ち出し・持ち込み（段 2）
+│   ├── secrets.yaml            # 秘密と記録の持ち出し・持ち込み
 │   ├── hosts                   # localhost のみ
 │   └── roles/                  # 16 ロール
 │       ├── dotfiles_repo/      # dotfiles の clone/pull + hooks 設定
@@ -209,8 +258,8 @@ macsetup/
 │       ├── go/                 # Go バイナリ
 │       ├── npm/                # グローバルパッケージ
 │       ├── vscode/             # VSCode 拡張機能
-│       ├── runners/            # 自前の実行役の登録と常駐設定（起動は切り替えの時だけ）
-│       ├── nightly_launcher/   # 夜の起動の LaunchAgent
+│       ├── runners/            # 自前の runner の登録と常駐設定（起動は切り替えの時だけ）
+│       ├── nightly_launcher/   # 夜間の起動の LaunchAgent
 │       ├── moomoo/             # OpenD のログ掃除と SDK の image
 │       ├── doctor/             # 点検（exec.yaml には入れない）
 │       └── secrets/            # 秘密の持ち出し・持ち込み（exec.yaml には入れない）

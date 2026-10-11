@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# 切り替えの試し実行の一覧を出す（段 6 の手順 13）。**読み取り専用で、出すだけ**。起動はしない
+# 切り替えの試し実行の一覧を出す（docs/cutover.md の手順 13）。**読み取り専用で、出すだけ**。起動はしない
 # （起動するかは切り替えの場で人が決める）。手元の複製を git fetch origin main（読むだけ）してから origin/main の定義を読む。
 #
 # 一覧は GitHub の main のワークフローの workflow_dispatch の入力と権限から実行時に作る（cutover-lib.sh）。
@@ -26,7 +26,7 @@ cutover_trial_extras='{"skip_audio":"true","audio_dry_run":"true","count":"1","s
 
 facts="$(cutover_workflow_facts)"
 
-# 実行役を使うワークフロー 1 本ずつを分類する（extras は入力に存在するものだけ付ける）
+# runner を使うワークフロー 1 本ずつを分類する（extras は入力に存在するものだけ付ける）
 rows="$(jq -r --argjson excl "${cutover_trial_excluded}" --argjson extras "${cutover_trial_extras}" '
   .[] as $w
   | ($w.inputs | keys) as $names

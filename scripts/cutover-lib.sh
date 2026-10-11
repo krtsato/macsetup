@@ -1,12 +1,12 @@
 #!/usr/bin/env bash
-# 切り替え（段 6）の 2 つの道具（cutover-trial.sh・cutover-check.sh）が共有する読み取り専用の部品。
+# 切り替えの 2 つの道具（cutover-trial.sh・cutover-check.sh）が共有する読み取り専用の部品。
 # source して使う。何も書かない。ネットワークは各複製の `git fetch origin main`（読むだけ）だけ。
 #
 # 入力の正本は **GitHub の main**（手元の作業ツリーではない。作業ツリーが別の branch や未 commit でも読み違えない）:
-#   - 起動役の予定表: watcher の複製の origin/main の cmd/nightly-launcher/plan.json
-#   - 自前の実行役を使うワークフロー: 実行役を置くリポジトリ（roles/runners/defaults の runners_list）の複製の
+#   - 夜間の起動の予定表: watcher の複製の origin/main の cmd/nightly-launcher/plan.json
+#   - 自前の runner を使うワークフロー: runner を置くリポジトリ（roles/runners/defaults の runners_list）の複製の
 #     origin/main の .github/workflows/*.y*ml のうち、runs-on に self-hosted を含むもの
-# 必要な複製（実行役 5 本 + watcher）が無い・git の複製でない・fetch できない・origin/main に
+# 必要な複製（runner 5 本 + watcher）が無い・git の複製でない・fetch できない・origin/main に
 # .github/workflows が無い、のどれでも、名指しで失敗する（黙って飛ばさない）。
 # 一覧はここに書かず、実行時に読む（書くと予定表やワークフローを変えたとき黙ってずれる）。
 #
@@ -24,7 +24,7 @@ cutover_init() {
   if [ -z "${RUNNER_REPOS:-}" ]; then
     RUNNER_REPOS="$(cutover_runner_repos)"
   fi
-  [ -n "${RUNNER_REPOS}" ] || { cutover_die "実行役を置くリポジトリの一覧が読めません"; return 1; }
+  [ -n "${RUNNER_REPOS}" ] || { cutover_die "runner を置くリポジトリの一覧が読めません"; return 1; }
   local repo dir
   for repo in ${RUNNER_REPOS} watcher; do
     dir="${REPOS_ROOT}/${repo}"
@@ -39,7 +39,7 @@ cutover_init() {
     || { cutover_die "watcher の予定表が読めません（slots が空か JSON が不正）"; return 1; }
 }
 
-# 実行役を置くリポジトリ名（roles/runners/defaults の runners_list。重複なし）
+# runner を置くリポジトリ名（roles/runners/defaults の runners_list。重複なし）
 cutover_runner_repos() {
   /usr/bin/ruby -ryaml -e '
     list = YAML.safe_load(File.read(ARGV[0]))["runners_list"] || []
@@ -47,7 +47,7 @@ cutover_runner_repos() {
   ' "${CUTOVER_REPO_DIR}/ansible/roles/runners/defaults/main.yaml"
 }
 
-# 実行役を使うワークフローごとの事実を JSON 配列で出す（origin/main の内容から）。
+# runner を使うワークフローごとの事実を JSON 配列で出す（origin/main の内容から）。
 # 各要素: {repo, file, dispatch, inputs:{名前:{type,default}}, writes:[書き込み権限の名前], readonly}
 # readonly は「全 job の権限が明示的に read/none だけ」のときだけ真。permissions の省略は真にしない
 # （省略すると既定の権限になり、書き込めることがある）。
@@ -105,7 +105,7 @@ cutover_workflow_facts() {
   printf '%s\n' "${out}"
 }
 
-# 完了の一覧。起動役の予定表の仕事（slot・枠の時刻と締切・リポジトリ・ワークフロー・仕事の ID・入力・曜日）
+# 完了の一覧。夜間の起動の予定表の仕事（slot・枠の時刻と締切・リポジトリ・ワークフロー・仕事の ID・入力・曜日）
 # ＋ 予定表に無い自前実行のワークフロー。ID は予定表と同じく省略時にワークフロー名（Job.IDOf）。
 # 各要素: {kind, slot, at, deadline, repo, workflow, id, inputs, days}。repo は owner/name。
 cutover_units() {

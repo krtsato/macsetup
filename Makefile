@@ -23,16 +23,16 @@ playbook:
 	PATH=$(BREW_PATH) $(ANSIBLE_PLAYBOOK) $(ANSIBLE_FLAGS) -i $(INVENTORY) $(if $(EXTRA_VARS),-e "$(EXTRA_VARS)",) $(PLAYBOOK)
 
 # 点検（読むだけ）。gh・jq・git・docker・claude・codex・nlm（~/.local/bin）を呼ぶ。
-# 段階は PHASE=pre-import|cutover|ready（既定 ready）
+# PHASE は pre-import|cutover|ready（既定 ready）
 DOCTOR_PATH := $(HOME)/.local/bin:/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin
 PHASE ?= ready
 
 doctor:
 	PATH=$(DOCTOR_PATH) $(ANSIBLE_PLAYBOOK) -i $(INVENTORY) ansible/doctor.yaml -e doctor_phase=$(PHASE)
 
-# 秘密と処理済みの記録を暗号化ディスクイメージで運ぶ（段 2）。**対話の端末から流すこと**（Ansible や CI からは不可）。
+# 秘密と処理済みの記録を暗号化ディスクイメージで運ぶ。**対話の端末から流すこと**（Ansible や CI からは不可）。
 # 合言葉は hdiutil が端末で直接尋ねる（引数・環境変数・Ansible の変数には載せない）。
-# 2 段: (1) Ansible が入力 JSON を 0600 の一時ファイルへ書くだけ (2) secrets.sh を端末へ繋いだまま直接実行。
+# 2 回に分けて動く: (1) Ansible が入力 JSON を 0600 の一時ファイルへ書くだけ (2) secrets.sh を端末へ繋いだまま直接実行。
 # 一時ファイルは成功でも失敗でも trap で消す。イメージはリポジトリの外の絶対パスへ。
 SECRETS_SH := ansible/roles/secrets/files/secrets.sh
 SECRETS_HOME ?= $(HOME)
@@ -67,10 +67,10 @@ secrets-restore:
 secrets-recover:
 	@$(call secrets_run,recover,)
 
-# 切り替えの道具（段 6。どちらも読むだけ）
+# 切り替えの道具（どちらも読むだけ。手順は docs/cutover.md）
 # cutover-trial: 試し実行の gh コマンドを出すだけ（起動しない。手元の複製のワークフロー定義を読む）
-# cutover-check: 完了の一覧 21 単位が新端末の実行役で成功したかを GitHub の run から判定する
-#   make cutover-check SINCE=<YYYY-MM-DD> RUNNERS=<新端末の実行役の名前をカンマ区切り、または名前の末尾>
+# cutover-check: 完了の一覧（確認対象 21 件）が新しい Mac の runner で成功したかを GitHub の run から判定する
+#   make cutover-check SINCE=<YYYY-MM-DD> RUNNERS=<新しい Mac の runner の名前をカンマ区切り、または名前の末尾>
 cutover-trial:
 	@PATH=$(DOCTOR_PATH) ./scripts/cutover-trial.sh
 
@@ -93,5 +93,5 @@ help:
 	@echo "secrets-restore  IMAGE=<abs path.dmg>  Back up what exists, then replace with the image"
 	@echo "secrets-recover  Undo a half-finished import/restore left by a crash (idempotent)"
 	@echo "cutover-trial  Print the dry-run gh commands for the cutover trial (read-only)"
-	@echo "cutover-check  SINCE=<YYYY-MM-DD> RUNNERS=<names or suffix>  Judge the 21-unit completion list (read-only)"
+	@echo "cutover-check  SINCE=<YYYY-MM-DD> RUNNERS=<names or suffix>  Judge whether the 21 jobs to confirm succeeded on the new Mac runners (read-only)"
 	@echo "github-ssh  Run setup-github-ssh.sh (override with SSH_KEY_TYPE/GITHUB_EMAIL)"

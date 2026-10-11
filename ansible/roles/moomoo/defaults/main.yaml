@@ -1,4 +1,4 @@
-# moomoo の接続役 OpenD のまわり。OpenD 本体は公式サイトの GUI 版を手で入れる（README の手動作業）。
+# moomoo の API ゲートウェイ OpenD のまわり。OpenD 本体は公式サイトの GUI 版を手で入れる（README の手動作業）。
 # 既定値。実際は GitHub の変数 MOOMOO_CLONE_DIR（mcp-invest-knowledge）を読んで上書きする
 moomoo_repo: "{{ lookup('env', 'HOME') }}/dev/me/trade-moomoo"
 moomoo_opend_app: /Applications/moomoo_OpenD.app

@@ -1,4 +1,4 @@
-# 実行役 1 体ぶん。runners_item = {repo, label, dir}
+# runner 1 体ぶん。runners_item = {repo, label, dir}
 - name: Check whether the runner is already registered
   ansible.builtin.stat:
     path: "{{ runners_home }}/{{ runners_item.dir }}/.runner"
@@ -67,7 +67,7 @@
 
 # svc.sh は雛形から plist を作り直すので、雛形も SessionCreate=false にしておく
 # （true だと Claude がキーチェーンを読めず落ちる）。実体のあるすべての bin* が対象（bin は版つき dir への symlink）。
-# 注意: 実行役の自動更新は新しい bin.<版> を作り、その雛形は true に戻る。点検が見るのは
+# 注意: runner の自動更新は新しい bin.<版> を作り、その雛形は true に戻る。点検が見るのは
 # 常駐側の plist なので、実害があるのは svc.sh install を再度流すときだけ。
 - name: Make runner service templates SessionCreate=false
   ansible.builtin.shell: |
@@ -185,7 +185,7 @@
         exit 0
       fi
       if [ "${waited}" -ge "{{ runners_online_timeout }}" ]; then
-        echo "実行役 ${name}（krtsato/{{ runners_item.repo }}）が {{ runners_online_timeout }} 秒以内に online にならなかった（状態: ${status:-見つからない}）" >&2
+        echo "runner ${name}（krtsato/{{ runners_item.repo }}）が {{ runners_online_timeout }} 秒以内に online にならなかった（状態: ${status:-見つからない}）" >&2
         exit 1
       fi
       sleep "{{ runners_online_interval }}"

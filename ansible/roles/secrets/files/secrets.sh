@@ -1,10 +1,10 @@
 #!/bin/bash
-# 秘密と処理済みの記録を、暗号化ディスクイメージで運ぶ（段 2）。
+# 秘密と処理済みの記録を、暗号化ディスクイメージで運ぶ。
 # 使い方: secrets.sh <list|export|import|restore> [イメージの絶対パス]
-#   list    運ぶ物と実行役・起動役の停止状態を表示するだけ（何も作らない）
-#   export  旧端末。許可一覧の物だけをイメージにまとめる
-#   import  新端末。衝突があれば何も変えずに止まり、無ければ全部置く（途中で失敗したら配置前へ戻す）
-#   restore 旧端末へ戻す。今ある物を退避してから、イメージの中身で置き換える
+#   list    運ぶ物と runner と夜間の起動の停止状態を表示するだけ（何も作らない）
+#   export  旧い Mac。許可一覧の物だけをイメージにまとめる
+#   import  新しい Mac。衝突があれば何も変えずに止まり、無ければ全部置く（途中で失敗したら配置前へ戻す）
+#   restore 旧い Mac へ戻す。今ある物を退避してから、イメージの中身で置き換える
 #   recover 強制終了などで途中に残った配置を、記録（journal）と実際の状態から配置前へ戻す（冪等）
 # 入力は環境変数: SECRETS_HOME / SECRETS_INPUT_FILE（JSON のファイルのパス。なければ SECRETS_INPUT に JSON そのもの。
 # 許可一覧は doctor と同じ正本）/ SECRETS_REPO_ROOT。使うのは `make secrets-*`（端末に繋いだまま直接実行する）。
@@ -292,9 +292,9 @@ resolve_entries() {
            recursive: ($e.recursive // false), children: ($e.children // null)} ]' >"${tmp}/resolved.json"
 }
 
-# --- 実行役と起動役が止まっているか --------------------------------------------------
+# --- runner と夜間の起動が止まっているか --------------------------------------------------
 # 止まっていると確かめられなければ「止まっている」とは扱わない（fail-closed）:
-#   - 実行役: .runner が有るのに .service が無い・読めない／ bin*/Runner.Listener の process が動いている
+#   - runner: .runner が有るのに .service が無い・読めない／ bin*/Runner.Listener の process が動いている
 #   - 読み込み済みの label（launchctl print が成功）
 LOADED=()
 STOP_REASONS=()
@@ -310,19 +310,19 @@ check_stopped() {
       label="$(basename "$(cat "${svc}")" .plist)"
       labels+=("${label}")
     elif [ -e "${rdir}/.runner" ]; then
-      STOP_REASONS+=("実行役 ${repo}/${name}: .runner が有るのに .service が無い・読めない（停止を確かめられない）")
+      STOP_REASONS+=("runner ${repo}/${name}: .runner が有るのに .service が無い・読めない（停止を確かめられない）")
     fi
     if [ -d "${rdir}" ]; then
       if ! command -v pgrep >/dev/null 2>&1; then
-        STOP_REASONS+=("実行役 ${repo}/${name}: pgrep が無く、Runner.Listener の有無を確かめられない")
+        STOP_REASONS+=("runner ${repo}/${name}: pgrep が無く、Runner.Listener の有無を確かめられない")
       else
         pat="${rdir}/bin[^/]*/Runner\\.Listener"
         rc=0
         pgrep -f "${pat}" >/dev/null 2>&1 || rc=$?
         case "${rc}" in
-          0) STOP_REASONS+=("実行役 ${repo}/${name}: Runner.Listener の process が動いている") ;;
+          0) STOP_REASONS+=("runner ${repo}/${name}: Runner.Listener の process が動いている") ;;
           1) ;;
-          *) STOP_REASONS+=("実行役 ${repo}/${name}: process の有無を確かめられない（pgrep が終了コード ${rc}）") ;;
+          *) STOP_REASONS+=("runner ${repo}/${name}: process の有無を確かめられない（pgrep が終了コード ${rc}）") ;;
         esac
       fi
     fi
@@ -347,7 +347,7 @@ check_stopped() {
 require_stopped() {
   check_stopped
   if [ "${#LOADED[@]}" -gt 0 ] || [ "${#STOP_REASONS[@]}" -gt 0 ]; then
-    err "実行役・起動役が止まっていると確かめられない。夜の処理が動いている間は運ばない（先に止めて、動いている枠の完了を待つ）:"
+    err "runner と夜間の起動が止まっていると確かめられない。夜の処理が動いている間は運ばない（先に止めて、動いている枠の完了を待つ）:"
     if [ "${#LOADED[@]}" -gt 0 ]; then printf '    読み込み済み: %s\n' "${LOADED[@]}" >&2; fi
     if [ "${#STOP_REASONS[@]}" -gt 0 ]; then printf '    %s\n' "${STOP_REASONS[@]}" >&2; fi
     exit 1
@@ -439,11 +439,11 @@ do_list() {
   fi
   check_stopped
   if [ "${#LOADED[@]}" -gt 0 ] || [ "${#STOP_REASONS[@]}" -gt 0 ]; then
-    log "実行役・起動役: 読み込み済み ${#LOADED[@]} 件・確かめられない ${#STOP_REASONS[@]} 件 → いまの状態では export・restore は拒否される"
+    log "runner と夜間の起動: 読み込み済み ${#LOADED[@]} 件・確かめられない ${#STOP_REASONS[@]} 件 → いまの状態では export・restore は拒否される"
     if [ "${#LOADED[@]}" -gt 0 ]; then printf '  %s\n' "${LOADED[@]}"; fi
     if [ "${#STOP_REASONS[@]}" -gt 0 ]; then printf '  %s\n' "${STOP_REASONS[@]}"; fi
   else
-    log "実行役・起動役: 読み込まれていない（export・restore できる）"
+    log "runner と夜間の起動: 読み込まれていない（export・restore できる）"
   fi
 }
 
@@ -514,7 +514,7 @@ do_export() {
   stage=""
   log "作成した: ${image}（権限 600）"
   print_plan
-  log "段階 6 まで安全に保管し、新端末で make secrets-import IMAGE=... を流す"
+  log "切り替えが済むまで安全に保管し、新しい Mac で make secrets-import IMAGE=... を流す"
 }
 
 # --- import / restore の共通部分 -----------------------------------------------------
@@ -807,7 +807,7 @@ summarize_manifest() {
 
 run_doctor() {
   local rc=0
-  log "段 1 の点検を流す（make doctor PHASE=cutover）。切り替え前なので実行役・起動役は「停止」が正しい状態"
+  log "点検を流す（make doctor PHASE=cutover）。切り替え前なので runner と夜間の起動は「停止」が正しい状態"
   if [ "${skip_doctor}" = 1 ]; then
     log "（テスト専用: 点検を省いた）"
     return 0
