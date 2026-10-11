@@ -242,11 +242,11 @@ group_tools() {
 }
 
 # ---------------------------------------------------------------------------------
-# opend: 証券口座への接続役。
+# opend: 証券口座への接続口（moomoo の API ゲートウェイ）。
 # 火〜土の夜間（01:30）の前は必須: 逆日歩の取得 short-pressure-sync は当日しか取れず、
 # 不通なら失敗する。土曜の証券口座への反映 watchlist-sync は失敗しても成功で終わるので、
 # 成功を接続の証拠にしない。よって月〜金（日本時間）に閉じていれば失敗、土日は警告。
-# ready 以外の段階では警告のみ。
+# ready 以外の PHASEでは警告のみ。
 # ---------------------------------------------------------------------------------
 group_opend() {
   local host port now dow hh mm minutes required=0 app login_item image cleanup items
@@ -283,7 +283,7 @@ group_opend() {
     now="$(TZ=Asia/Tokyo date '+%u %H %M')"
   fi
   read -r dow hh mm <<<"${now}"
-  # 月曜 00:00 からの分。次に接続役を要する夜間は火〜土 01:30。
+  # 月曜 00:00 からの分。次に OpenD を要する夜間は火〜土 01:30。
   # 土曜 01:30 〜 月曜 01:30 だけは次の夜間まで間があるので必須にしない。
   minutes=$(((dow - 1) * 1440 + 10#${hh} * 60 + 10#${mm}))
   if [ "${minutes}" -lt 90 ] || [ "${minutes}" -ge $((5 * 1440 + 90)) ]; then required=0; else required=1; fi
@@ -295,7 +295,7 @@ group_opend() {
 }
 
 # ---------------------------------------------------------------------------------
-# logins: ログイン。gh・Claude は全段階で必須。codex・NotebookLM は pre-import で
+# logins: ログイン。gh・Claude は全 PHASEで必須。codex・NotebookLM は pre-import で
 # 「無いこと」を期待し（有れば衝突の警告）、cutover/ready で必須。
 # 結果は終了コードだけで見る（出力は捨てる）。claude auth status へは問い合わせを
 # 送らない（claude -p は使わない）。
@@ -305,7 +305,7 @@ group_logins() {
   gh auth status >/dev/null 2>&1 || fail "gh: ログインしていない（gh auth status）"
   for repo in $(jin -r '.admin_repos[]'); do
     admin="$(gh api "repos/krtsato/${repo}" --jq .permissions.admin 2>/dev/null)"
-    [ "${admin}" = true ] || fail "${repo}: 管理者権限が無い・読めない（実行役の登録に要る）"
+    [ "${admin}" = true ] || fail "${repo}: 管理者権限が無い・読めない（runner の登録に要る）"
   done
   if claude auth status 2>/dev/null | jq -e '.loggedIn == true' >/dev/null 2>&1; then :; else
     fail "claude: ログインしていない（claude auth status）"
@@ -332,24 +332,24 @@ group_logins() {
     done
   fi
 
-  # 実行役と同じ環境（env -i ＋ 実行役の .path）でも gh・claude・codex を確かめ、
+  # runner と同じ環境（env -i ＋ runner の .path）でも gh・claude・codex を確かめ、
   # PATH や環境変数の差による失敗を拾う。キーチェーンのセッションの差は plist の
   # SessionCreate=false の点検が受け持つ。launchd から起こした process での確認は
-  # 段 6 の実際の実行でしか確かめられない（ここでは launchd の仕事を作らない）。
+  # 切り替えの試し実行と夜間の本番でしか確かめられない（ここでは launchd の仕事を作らない）。
   rdir="${home}/$(jin -r '.runner_dir')"
   rpath="$(head -1 "${rdir}/.path" 2>/dev/null)"
   if [ -z "${rpath}" ]; then
-    fail "実行役と同じ環境で: ${rdir#"${home}"/}/.path を読めない"
+    fail "runner と同じ環境で: ${rdir#"${home}"/}/.path を読めない"
     return
   fi
   uname="${USER:-$(id -un)}"
   runner_env() { env -i HOME="${HOME}" USER="${uname}" LOGNAME="${uname}" PATH="${rpath}" "$@"; }
-  runner_env gh auth status >/dev/null 2>&1 || fail "実行役と同じ環境で: gh auth status が通らない"
+  runner_env gh auth status >/dev/null 2>&1 || fail "runner と同じ環境で: gh auth status が通らない"
   if runner_env claude auth status 2>/dev/null | jq -e '.loggedIn == true' >/dev/null 2>&1; then :; else
-    fail "実行役と同じ環境で: claude auth status がログイン済みを返さない"
+    fail "runner と同じ環境で: claude auth status がログイン済みを返さない"
   fi
   if [ "${phase}" != pre-import ]; then
-    runner_env codex login status >/dev/null 2>&1 || fail "実行役と同じ環境で: codex login status が通らない"
+    runner_env codex login status >/dev/null 2>&1 || fail "runner と同じ環境で: codex login status が通らない"
   fi
 }
 
@@ -378,7 +378,7 @@ group_github() {
 }
 
 # ---------------------------------------------------------------------------------
-# runners: 実行役。全段階で .path の先頭が mise の shims・plist が SessionCreate=false。
+# runners: self-hosted runner。全 PHASEで .path の先頭が mise の shims・plist が SessionCreate=false。
 # pre-import/cutover は登録済み・停止中、ready は GitHub 上で online かつラベル一致。
 # ---------------------------------------------------------------------------------
 group_runners() {
@@ -388,20 +388,20 @@ group_runners() {
     name="${repo}/${label}"
     rdir="${home}/${dir}"
     if [ ! -d "${rdir}" ]; then
-      fail "実行役 ${name}: 導入先 ${dir} が無い"
+      fail "runner ${name}: 導入先 ${dir} が無い"
       continue
     fi
     if [ ! -f "${rdir}/.runner" ]; then
-      fail "実行役 ${name}: 未登録（${dir}/.runner が無い）"
+      fail "runner ${name}: 未登録（${dir}/.runner が無い）"
       continue
     fi
     # .runner から読むのは名前だけ（資格情報は .credentials にあり、読まない）
     agent="$(jq -r '.agentName // empty' "${rdir}/.runner" 2>/dev/null)"
-    [ -n "${agent}" ] || fail "実行役 ${name}: .runner から名前を読めない"
+    [ -n "${agent}" ] || fail "runner ${name}: .runner から名前を読めない"
 
     first="$(tr ':' '\n' <"${rdir}/.path" 2>/dev/null | head -1)"
     if [ "${first}" != "${shims}" ]; then
-      fail "実行役 ${name}: .path の先頭が mise の shims でない（${first:-空}）"
+      fail "runner ${name}: .path の先頭が mise の shims でない（${first:-空}）"
     fi
 
     svc_file="${rdir}/.service"
@@ -410,11 +410,11 @@ group_runners() {
       plist="${la_dir}/$(basename "$(cat "${svc_file}")")"
     fi
     if [ -z "${plist}" ] || [ ! -f "${plist}" ]; then
-      fail "実行役 ${name}: 常駐設定の plist が無い（${plist:-.service が無い}）"
+      fail "runner ${name}: 常駐設定の plist が無い（${plist:-.service が無い}）"
       plabel=""
     else
       sc="$(plutil -extract SessionCreate raw "${plist}" 2>/dev/null)"
-      [ "${sc}" = false ] || fail "実行役 ${name}: plist の SessionCreate が false でない（${sc:-未設定}）"
+      [ "${sc}" = false ] || fail "runner ${name}: plist の SessionCreate が false でない（${sc:-未設定}）"
       plabel="$(basename "${plist}" .plist)"
     fi
 
@@ -422,21 +422,21 @@ group_runners() {
       state="$(gh api "repos/krtsato/${repo}/actions/runners" --paginate \
         --jq ".runners[] | select(.name == \"${agent}\") | [.status, ([.labels[].name] | join(\",\"))] | @tsv" 2>/dev/null)"
       if [ -z "${state}" ]; then
-        fail "実行役 ${name}: GitHub に ${agent} が見つからない・一覧を読めない"
+        fail "runner ${name}: GitHub に ${agent} が見つからない・一覧を読めない"
       else
-        case "${state%%$'\t'*}" in online) ;; *) fail "実行役 ${name}: GitHub 上で online でない（${state%%$'\t'*}）" ;; esac
-        case ",${state#*$'\t'}," in *",${label},"*) ;; *) fail "実行役 ${name}: ラベル ${label} が一致しない" ;; esac
+        case "${state%%$'\t'*}" in online) ;; *) fail "runner ${name}: GitHub 上で online でない（${state%%$'\t'*}）" ;; esac
+        case ",${state#*$'\t'}," in *",${label},"*) ;; *) fail "runner ${name}: ラベル ${label} が一致しない" ;; esac
       fi
     elif [ -n "${plabel}" ]; then
       if launchctl print "gui/$(id -u)/${plabel}" 2>/dev/null | grep -Eq 'state = running|pid = [0-9]+'; then
-        fail "実行役 ${name}: 停止中のはずが動いている"
+        fail "runner ${name}: 停止中のはずが動いている"
       fi
     fi
   done < <(jin -r '.runners[] | [.repo, .label, .dir] | @tsv')
 }
 
 # ---------------------------------------------------------------------------------
-# launcher: 起動役（com.krtsato.watcher.nightly-launcher.A/B）。
+# launcher: 夜間の起動（com.krtsato.watcher.nightly-launcher.A/B）。
 # pre-import/cutover は plist が有り読み込まれていない、ready は読み込み済み。
 # 未完了の再開記録（state-*.json の done が true でない）は、ready では警告、
 # cutover（切り替えの直前）では失敗。
@@ -445,12 +445,12 @@ group_launcher() {
   local label plist loaded f unfinished
   for label in $(jin -r '.labels[]'); do
     plist="${la_dir}/${label}.plist"
-    [ -f "${plist}" ] || fail "起動役 ${label}: plist が無い（${plist}）"
+    [ -f "${plist}" ] || fail "夜間の起動 ${label}: plist が無い（${plist}）"
     if launchctl print "gui/$(id -u)/${label}" >/dev/null 2>&1; then loaded=1; else loaded=0; fi
     if [ "${phase}" = ready ]; then
-      [ "${loaded}" = 1 ] || fail "起動役 ${label}: launchd に読み込まれていない"
+      [ "${loaded}" = 1 ] || fail "夜間の起動 ${label}: launchd に読み込まれていない"
     elif [ "${loaded}" = 1 ]; then
-      fail "起動役 ${label}: 停止中のはずが読み込まれている"
+      fail "夜間の起動 ${label}: 停止中のはずが読み込まれている"
     fi
   done
   unfinished=""
@@ -463,8 +463,8 @@ group_launcher() {
   done
   if [ -n "${unfinished}" ]; then
     case "${phase}" in
-      ready) warn "起動役の再開記録: 未完了（done が true でない）:${unfinished}" ;;
-      cutover) fail "起動役の再開記録: 未完了（切り替えは全枠の完了後だけ）:${unfinished}" ;;
+      ready) warn "夜間の起動の再開記録: 未完了（done が true でない）:${unfinished}" ;;
+      cutover) fail "夜間の起動の再開記録: 未完了（切り替えは全枠の完了後だけ）:${unfinished}" ;;
     esac
   fi
 }

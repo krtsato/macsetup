@@ -1,4 +1,4 @@
-# 実行役を登録し、常駐の設定（LaunchAgent の plist）まで作る。起動は runners_enabled が真のときだけ。
+# runner を登録し、常駐の設定（LaunchAgent の plist）まで作る。起動は runners_enabled が真のときだけ。
 # 既に登録済みの端末（.runner がある）では、ダウンロードも登録もしない。
 
 - name: Read the local host name for runner names

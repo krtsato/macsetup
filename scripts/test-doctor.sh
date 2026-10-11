@@ -77,7 +77,7 @@ plist="${tmp}/LaunchAgents/actions.runner.krtsato-mcp-mediable.mediable-sync-mac
 plutil -replace SessionCreate -bool true "${plist}"
 rc=0
 run_doctor "${tmp}/c.out" -e "doctor_launchagents_dir=${tmp}/LaunchAgents" || rc=$?
-expect_broken "SessionCreate=true plist" "${tmp}/c.out" "${rc}" "実行役 mcp-mediable/mediable-sync: plist の SessionCreate が false でない"
+expect_broken "SessionCreate=true plist" "${tmp}/c.out" "${rc}" "runner mcp-mediable/mediable-sync: plist の SessionCreate が false でない"
 
 # (e) NOTEBOOKLM_PROFILE を読めないリポジトリ（存在しないリポジトリ）
 log "(e) NOTEBOOKLM_PROFILE を読めない"

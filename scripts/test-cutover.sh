@@ -1,10 +1,10 @@
 #!/usr/bin/env bash
 # cutover-lib.sh・cutover-trial.sh・cutover-check.sh の検査。GitHub への書き込みも問い合わせ（gh）も無い
 # （(a)(b) は本物の複製を git fetch するだけ。(c)〜(e) は一時の git リポジトリと偽の gh）。
-# (a) 今の GitHub の main から作った完了の一覧が 21 単位（予定表 18 ＋ 夜間以外 3）で、その 3 つが想定どおり
+# (a) 今の GitHub の main から作った完了の一覧が 確認対象 21 件（予定表 18 ＋ 夜間以外 3）で、その 3 つが想定どおり
 # (b) 試し実行の一覧が想定どおり（含む・除く・入力値）。想定を直書きしているのは、定義が動いたときに気づくため
 # (c) 判定の論理を、偽の gh が返す固定の JSON で確かめる:
-#     完了 / 成功なし / 旧端末だけ / 曜日限定 / job の全ページ・runner_name が空 / 共有ワークフローは 1 晩で数える
+#     完了 / 成功なし / 旧い Mac だけ / 曜日限定 / job の全ページ・runner_name が空 / 共有ワークフローは 1 晩で数える
 # (d) 読み先が origin/main であること（作業ツリーの汚れに影響されない）と、複製・fetch・workflows の欠けの名指しの失敗
 # (e) 権限の省略は試し実行にしない（分類の fail-safe）
 set -euo pipefail
@@ -30,16 +30,16 @@ log "(a) 完了の一覧の導出（この端末の複製を fetch した origin
 . scripts/cutover-lib.sh
 cutover_init
 real_units="$(cutover_units)"
-expect_eq "完了の一覧は 21 単位" 21 "$(jq 'length' <<<"${real_units}")"
+expect_eq "完了の一覧は 確認対象 21 件" 21 "$(jq 'length' <<<"${real_units}")"
 expect_eq "予定表の仕事は 18" 18 "$(jq '[.[] | select(.kind == "plan")] | length' <<<"${real_units}")"
 expect_eq "予定表に無い 3 本は digest-check・note-check・watchlist-check" \
   "digest-check.yaml note-check.yaml watchlist-check.yaml" \
   "$(jq -r '[.[] | select(.kind == "extra") | .workflow] | sort | join(" ")' <<<"${real_units}")"
-expect_eq "turnover-snapshot は 3 単位（共有）" 3 "$(jq '[.[] | select(.workflow == "turnover-snapshot.yaml")] | length' <<<"${real_units}")"
-expect_eq "daily-mediable-sync は 2 単位（共有）" 2 "$(jq '[.[] | select(.workflow == "daily-mediable-sync.yaml")] | length' <<<"${real_units}")"
+expect_eq "turnover-snapshot は 3 件（共有）" 3 "$(jq '[.[] | select(.workflow == "turnover-snapshot.yaml")] | length' <<<"${real_units}")"
+expect_eq "daily-mediable-sync は 2 件（共有）" 2 "$(jq '[.[] | select(.workflow == "daily-mediable-sync.yaml")] | length' <<<"${real_units}")"
 expect_eq "仕事の ID は省略時にワークフロー名" "nikkei-eps-sync.yaml" \
   "$(jq -r '.[] | select(.workflow == "nikkei-eps-sync.yaml") | .id' <<<"${real_units}")"
-expect_eq "曜日限定の単位は 8 つ（火〜土が 5・火が 2・土が 1）" 8 "$(jq '[.[] | select(.days | length > 0)] | length' <<<"${real_units}")"
+expect_eq "曜日限定の確認対象は 8 つ（火〜土が 5・火が 2・土が 1）" 8 "$(jq '[.[] | select(.days | length > 0)] | length' <<<"${real_units}")"
 
 # ---------------------------------------------------------------------------
 # (b) 試し実行の一覧
@@ -109,7 +109,7 @@ cat >"${fx}/root/watcher/cmd/nightly-launcher/plan.json" <<'JSON'
   {"repo":"krtsato/mcp-a","workflow":"shared.yaml","id":"y"}]}]}
 JSON
 for w in once tue shared extra; do wf mcp-a "${w}" "[self-hosted, macOS, label]"; done
-# 自前の実行役を使わないワークフローは一覧に入らない
+# 自前の runner を使わないワークフローは一覧に入らない
 wf mcp-a hosted ubuntu-latest
 publish mcp-a
 publish watcher
@@ -188,18 +188,18 @@ run_check() { # run_check <出力ファイル> <いま> <RUNNERS>。終了コー
 log "(c0) 何も無い"
 reset_data
 run_check "${tmp}/c0.out" "${MON_NOW}" "new-1,new-2"
-expect_eq "一覧は 5 単位（予定表 4 ＋ 夜間以外 1。実行役を使わないものは入らない）" "合計 5" "$(grep -o '合計 [0-9]*' "${tmp}/c0.out")"
+expect_eq "一覧は 5 件（予定表 4 ＋ 夜間以外 1。runner を使わないものは入らない）" "合計 5" "$(grep -o '合計 [0-9]*' "${tmp}/c0.out")"
 expect_eq "何も無ければ終了コード 1" 1 "${rc}"
 expect_line "成功なし: pending" "${tmp}/c0.out" '^pending +A mcp-a once.yaml +SINCE 以降の成功なし'
 
-log "(c1) 完了・旧端末だけ・曜日未到来・共有の 1 回だけ（月曜の夜）"
+log "(c1) 完了・旧い Mac だけ・曜日未到来・共有の 1 回だけ（月曜の夜）"
 reset_data
 mkrun once.yaml 101 "${MON}" success new-1
 mkrun extra.yaml 102 "${MON}" success old-1
 mkrun shared.yaml 103 "${MON}" success new-2
 run_check "${tmp}/c1.out" "${MON_NOW}" "new-1,new-2"
-expect_line "新端末の成功 → done と run の URL" "${tmp}/c1.out" '^done +A mcp-a once.yaml +https://example.test/run/101'
-expect_line "旧端末だけの成功 → pending" "${tmp}/c1.out" '^pending +- mcp-a extra.yaml +成功は 1 回あるが、新端末の実行役ではない'
+expect_line "新しい Mac の成功 → done と run の URL" "${tmp}/c1.out" '^done +A mcp-a once.yaml +https://example.test/run/101'
+expect_line "旧い Mac だけの成功 → pending" "${tmp}/c1.out" '^pending +- mcp-a extra.yaml +成功は 1 回あるが、新しい Mac の runner ではない'
 expect_line "曜日限定・まだ来ていない → pending と次の日" "${tmp}/c1.out" '^pending +A mcp-a tue.yaml +対象の曜日（tue）がまだ来ていない（次: 2026-10-13）'
 expect_line "共有: 1 晩に 1 回だけ → x も pending" "${tmp}/c1.out" '^pending +A mcp-a shared.yaml #x +共有 1/2 +1 晩に必要な成功がそろっていない'
 expect_line "共有: 1 晩に 1 回だけ → y も pending" "${tmp}/c1.out" '^pending +A mcp-a shared.yaml #y +共有 1/2 '
@@ -210,7 +210,7 @@ log "(c2) 曜日が合わない成功は数えない（水曜の夜）"
 reset_data
 mkrun tue.yaml 201 "${MON}" success new-1
 run_check "${tmp}/c2.out" "${WED_NOW}" "new-1,new-2"
-expect_line "月曜の成功では火曜限定の単位は pending" "${tmp}/c2.out" '^pending +A mcp-a tue.yaml +新端末の成功は 1 回あるが、対象の曜日（tue）のものが無い'
+expect_line "月曜の成功では火曜限定の確認対象は pending" "${tmp}/c2.out" '^pending +A mcp-a tue.yaml +新しい Mac の成功は 1 回あるが、対象の曜日（tue）のものが無い'
 
 log "(c3) 曜日が合う成功と、共有が同じ晩に 2 回成功（水曜の夜）"
 reset_data
@@ -240,7 +240,7 @@ mkrun shared.yaml 501 "${MON}" success new-1
 mkrun shared.yaml 502 "${MON2}" success new-2
 mkrun shared.yaml 503 "2026-10-11T16:50:00Z" failure new-1
 run_check "${tmp}/c5.out" "${WED_NOW}" "new-1,new-2"
-expect_line "失敗を挟んだ晩 → x は pending と理由" "${tmp}/c5.out" '^pending +A mcp-a shared.yaml #x +共有 0/2 +2026-10-12 の夜の窓に新端末での成功以外の run（失敗・実行中・旧端末など）があるため数えない'
+expect_line "失敗を挟んだ晩 → x は pending と理由" "${tmp}/c5.out" '^pending +A mcp-a shared.yaml #x +共有 0/2 +2026-10-12 の夜の窓に新しい Mac での成功以外の run（失敗・実行中・旧い Mac など）があるため数えない'
 expect_line "失敗を挟んだ晩 → y も pending" "${tmp}/c5.out" '^pending +A mcp-a shared.yaml #y '
 
 log "(c5b) 共有: 同じ晩に成功 2 回＋実行中 1 回は数えない"
@@ -251,33 +251,33 @@ mkrun shared.yaml 513 "2026-10-11T16:50:00Z" null new-1
 run_check "${tmp}/c5b.out" "${WED_NOW}" "new-1,new-2"
 expect_line "実行中を挟んだ晩 → x は pending" "${tmp}/c5b.out" '^pending +A mcp-a shared.yaml #x '
 
-log "(c5c) 共有: 同じ晩に新端末で成功 2 回＋旧端末で成功 1 回は数えない"
+log "(c5c) 共有: 同じ晩に新しい Mac で成功 2 回＋旧い Mac で成功 1 回は数えない"
 reset_data
 mkrun shared.yaml 521 "${MON}" success new-1
 mkrun shared.yaml 522 "${MON2}" success new-2
 mkrun shared.yaml 523 "2026-10-11T16:50:00Z" success old-1
 run_check "${tmp}/c5c.out" "${WED_NOW}" "new-1,new-2"
-expect_line "旧端末の成功を挟んだ晩 → x は pending" "${tmp}/c5c.out" '^pending +A mcp-a shared.yaml #x '
+expect_line "旧い Mac の成功を挟んだ晩 → x は pending" "${tmp}/c5c.out" '^pending +A mcp-a shared.yaml #x '
 
-log "(c6) job の runner_name が空・旧端末が混ざった run は数えない"
+log "(c6) job の runner_name が空・旧い Mac が混ざった run は数えない"
 reset_data
 mkrun once.yaml 601 "${MON}" success new-1 NULL
 mkrun extra.yaml 602 "${MON}" success new-1 old-1
 mkrun tue.yaml 603 "${TUE}" success
 run_check "${tmp}/c6.out" "${WED_NOW}" "new-1,new-2"
-expect_line "runner_name が null の job を含む run は pending" "${tmp}/c6.out" '^pending +A mcp-a once.yaml +成功は 1 回あるが、新端末の実行役ではない'
-expect_line "新旧が混ざった run は pending" "${tmp}/c6.out" '^pending +- mcp-a extra.yaml +成功は 1 回あるが、新端末の実行役ではない'
-expect_line "job が 1 つも無い run は pending" "${tmp}/c6.out" '^pending +A mcp-a tue.yaml +成功は 1 回あるが、新端末の実行役ではない'
+expect_line "runner_name が null の job を含む run は pending" "${tmp}/c6.out" '^pending +A mcp-a once.yaml +成功は 1 回あるが、新しい Mac の runner ではない'
+expect_line "新旧が混ざった run は pending" "${tmp}/c6.out" '^pending +- mcp-a extra.yaml +成功は 1 回あるが、新しい Mac の runner ではない'
+expect_line "job が 1 つも無い run は pending" "${tmp}/c6.out" '^pending +A mcp-a tue.yaml +成功は 1 回あるが、新しい Mac の runner ではない'
 
-log "(c7) job が 2 ページにまたがる（2 ページ目に旧端末）"
+log "(c7) job が 2 ページにまたがる（2 ページ目に旧い Mac）"
 reset_data
 mkrun once.yaml 701 "${MON}" success new-1 new-2
 addpage 701 old-1
 mkrun extra.yaml 702 "${MON}" success new-1
 addpage 702 new-2
 run_check "${tmp}/c7.out" "${WED_NOW}" "new-1,new-2"
-expect_line "2 ページ目の旧端末の job で数えない" "${tmp}/c7.out" '^pending +A mcp-a once.yaml +成功は 1 回あるが、新端末の実行役ではない'
-expect_line "2 ページとも新端末なら done" "${tmp}/c7.out" '^done +- mcp-a extra.yaml +https://example.test/run/702'
+expect_line "2 ページ目の旧い Mac の job で数えない" "${tmp}/c7.out" '^pending +A mcp-a once.yaml +成功は 1 回あるが、新しい Mac の runner ではない'
+expect_line "2 ページとも新しい Mac なら done" "${tmp}/c7.out" '^done +- mcp-a extra.yaml +https://example.test/run/702'
 
 log "(c8) 名前の末尾で指定できる"
 reset_data
@@ -293,13 +293,13 @@ expect_eq "偽の gh への問い合わせに api 以外は無い" 0 "$(grep -vc
 # ---------------------------------------------------------------------------
 log "(d) origin/main を読む・欠けは名指しで失敗"
 ctl() { REPOS_ROOT="${fx}/root" RUNNER_REPOS="${RR:-mcp-a}" bash scripts/cutover-trial.sh 2>&1; }
-# 作業ツリーを汚す（未 commit のワークフローを足す・既存を実行役なしに書き換える）。origin/main は変わらない
+# 作業ツリーを汚す（未 commit のワークフローを足す・既存を runner なしに書き換える）。origin/main は変わらない
 wf mcp-a dirty "[self-hosted]"
 wf mcp-a once ubuntu-latest
 before="$(ctl | grep -c 'gh workflow run\|^- ')"
 after_units="$(REPOS_ROOT="${fx}/root" RUNNER_REPOS=mcp-a bash -c '. scripts/cutover-lib.sh; cutover_init; cutover_units | jq length')"
-expect_eq "作業ツリーの汚れは読まない（一覧は origin/main のまま 5 単位）" 5 "${after_units}"
-expect_eq "試し実行の一覧も origin/main のまま（実行役のワークフロー 4 本。汚れた dirty は入らない）" 4 "${before}"
+expect_eq "作業ツリーの汚れは読まない（一覧は origin/main のまま 5 件）" 5 "${after_units}"
+expect_eq "試し実行の一覧も origin/main のまま（runner のワークフロー 4 本。汚れた dirty は入らない）" 4 "${before}"
 git -C "${fx}/root/mcp-a" checkout -q -- . && git -C "${fx}/root/mcp-a" clean -fdq
 
 out="$(RR='mcp-a mcp-missing' ctl || true)"

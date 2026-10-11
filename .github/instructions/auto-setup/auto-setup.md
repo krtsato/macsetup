@@ -18,7 +18,7 @@
 
    ```sh
    cd ~/dev/me/macsetup
-   ./scripts/install-clt-brew-ansible.sh
+   ./scripts/install-brew-ansible.sh
    ```
 
 4. プレイブックを実行する（非対話でパスワード供給）。

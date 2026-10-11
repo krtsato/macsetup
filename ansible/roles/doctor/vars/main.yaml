@@ -1,4 +1,4 @@
-# 点検の一覧。持ち出し・持ち込み（段 2）・点検（段 1）が同じ一覧を読む正本。
+# 点検の一覧。持ち出し・持ち込み（make secrets-*）と点検（make doctor）が同じ一覧を読む正本。
 # パス・分類・権限・用途だけを持ち、中身（秘密の値）は持たない。
 # プロファイル名はアカウントの識別子に近いので書かない。各リポジトリの GitHub 変数
 # NOTEBOOKLM_PROFILE を実行時に読んで {profile} へ展開する。
@@ -15,7 +15,7 @@ doctor_phases:
 # children は dir の中に必須で居る 0600 のファイル。recursive は配下すべて
 # （ディレクトリ 0700・ファイル 0600）を点検する。.DS_Store は除外対象なので警告にとどめる。
 # required=false は無くてよいが、有るなら権限は守る。
-# 段 2 の許可一覧（2026-10-11 の端末で列挙）に 1 対 1 で対応させる。除外した物は点検しない。
+# 秘密の持ち出し・持ち込みの許可一覧（2026-10-11 の Mac で列挙）に 1 対 1 で対応させる。除外した物は点検しない。
 doctor_config_files:
   # 認証
   - path: ".config/mcp-notebooklm/cookies/{profile}.cookies.txt"
@@ -248,7 +248,7 @@ doctor_profile_repos:
   - mcp-seeking-alpha
   - mcp-mediable
 
-# --- 4. 実行役（5 体）---------------------------------------------------------------
+# --- 4. runner（5 体）---------------------------------------------------------------
 # dir はホームからの相対の導入先。label は GitHub 上のラベル。
 # 登録する側の一覧は roles/runners/defaults の runners_list（同じ内容。足し引きしたら両方直す）。
 doctor_runners:
@@ -268,10 +268,10 @@ doctor_runners:
     label: "knowledge-sync"
     dir: "dev/me/mcp-invest-knowledge/actions-runners"
 
-# 実行役の .path の先頭に置くべき場所（ホームからの相対）
+# runner の .path の先頭に置くべき場所（ホームからの相対）
 doctor_mise_shims: ".local/share/mise/shims"
 
-# --- 5. 起動役 --------------------------------------------------------------------
+# --- 5. 夜間の起動 --------------------------------------------------------------------
 # 時刻・順序の正本は krtsato/watcher の plan.json。ここは枠の名前と label だけを持つ。
 doctor_launcher_labels:
   - com.krtsato.watcher.nightly-launcher.A
@@ -279,7 +279,7 @@ doctor_launcher_labels:
 # 未完了の再開記録の置き場（ホームからの相対）
 doctor_launcher_state_glob: "dev/me/watcher/.launcher/state-*.json"
 
-# --- 6. 道具と接続役 ----------------------------------------------------------------
+# --- 6. 道具と OpenD ----------------------------------------------------------------
 doctor_nlm_path: ".local/bin/nlm"
 # 入れる側の正本は roles/uv_tools/defaults/main.yaml。版を上げるときは両方を揃える
 doctor_nlm_version: "0.9.6"

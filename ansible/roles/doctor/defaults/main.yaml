@@ -1,4 +1,4 @@
-# 点検の段階。pre-import（持ち込み前）/ cutover（切り替え中）/ ready（稼働）
+# 点検の PHASE。pre-import（持ち込み前）/ cutover（切り替え中）/ ready（稼働）
 doctor_phase: ready
 
 # テスト用に差し替えられるパスの根。既定は実際のホームと LaunchAgents
@@ -10,5 +10,5 @@ doctor_launchagents_dir: "{{ doctor_home }}/Library/LaunchAgents"
 doctor_extra_config_files: []
 # 複製の場所の差し替え。キーは "リポジトリ/変数名"、値はパス
 doctor_clone_dir_overrides: {}
-# 接続役の判定に使う「いま」の上書き（日本時間。例 2026-10-17T00:30）。空なら実際の時刻
+# OpenD の判定に使う「いま」の上書き（日本時間。例 2026-10-17T00:30）。空なら実際の時刻
 doctor_now: ""
