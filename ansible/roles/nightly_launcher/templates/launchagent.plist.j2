@@ -17,7 +17,7 @@
   <key>WorkingDirectory</key><string>{{ nightly_launcher_repo }}</string>
   <key>EnvironmentVariables</key>
   <dict>
-    <key>PATH</key><string>{{ lookup('env', 'HOME') }}/.local/share/mise/shims:/opt/homebrew/bin:/usr/bin:/bin:/usr/sbin:/sbin</string>
+    <key>PATH</key><string>{{ nightly_launcher_home }}/.local/share/mise/shims:/opt/homebrew/bin:/usr/bin:/bin:/usr/sbin:/sbin</string>
   </dict>
   <key>StandardOutPath</key><string>{{ nightly_launcher_repo }}/.launcher/{{ slot.name }}.out.log</string>
   <key>StandardErrorPath</key><string>{{ nightly_launcher_repo }}/.launcher/{{ slot.name }}.err.log</string>

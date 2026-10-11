@@ -13,5 +13,6 @@
     - go
     - npm
     - vscode
+    - runners
     - nightly_launcher
     - moomoo
