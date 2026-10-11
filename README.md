@@ -31,7 +31,7 @@
 | `make secrets-restore` | 今ある物を退避して、イメージの中身で置き換える | `make secrets-restore IMAGE=/Volumes/USB/macsetup-secrets.dmg` |
 | `make secrets-recover` | 強制終了で止まった import・restore の跡を配置前へ戻す（冪等） | `make secrets-recover` |
 | `make cutover-trial` | 切り替えの試し実行の `gh workflow run` を出す（出すだけ・読むだけ） | `make cutover-trial` |
-| `make cutover-check` | 完了の一覧 21 単位が新端末の実行役で成功したか判定（読むだけ。pending があれば終了コード 1） | `make cutover-check SINCE=2026-10-15 RUNNERS=<端末名>` |
+| `make cutover-check` | 完了の一覧 21 単位が新端末の実行役で成功したか判定（読むだけ。pending があれば 0 以外で終わる） | `make cutover-check SINCE=2026-10-15 RUNNERS=<端末名>` |
 | `make help` | 簡易ヘルプ表示 | - |
 
 主要な変数

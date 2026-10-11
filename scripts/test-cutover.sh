@@ -240,8 +240,24 @@ mkrun shared.yaml 501 "${MON}" success new-1
 mkrun shared.yaml 502 "${MON2}" success new-2
 mkrun shared.yaml 503 "2026-10-11T16:50:00Z" failure new-1
 run_check "${tmp}/c5.out" "${WED_NOW}" "new-1,new-2"
-expect_line "失敗を挟んだ晩 → x は pending と理由" "${tmp}/c5.out" '^pending +A mcp-a shared.yaml #x +共有 0/2 +2026-10-12 の夜の窓に失敗・取り消し・時間切れの run があるため数えない'
+expect_line "失敗を挟んだ晩 → x は pending と理由" "${tmp}/c5.out" '^pending +A mcp-a shared.yaml #x +共有 0/2 +2026-10-12 の夜の窓に新端末での成功以外の run（失敗・実行中・旧端末など）があるため数えない'
 expect_line "失敗を挟んだ晩 → y も pending" "${tmp}/c5.out" '^pending +A mcp-a shared.yaml #y '
+
+log "(c5b) 共有: 同じ晩に成功 2 回＋実行中 1 回は数えない"
+reset_data
+mkrun shared.yaml 511 "${MON}" success new-1
+mkrun shared.yaml 512 "${MON2}" success new-2
+mkrun shared.yaml 513 "2026-10-11T16:50:00Z" null new-1
+run_check "${tmp}/c5b.out" "${WED_NOW}" "new-1,new-2"
+expect_line "実行中を挟んだ晩 → x は pending" "${tmp}/c5b.out" '^pending +A mcp-a shared.yaml #x '
+
+log "(c5c) 共有: 同じ晩に新端末で成功 2 回＋旧端末で成功 1 回は数えない"
+reset_data
+mkrun shared.yaml 521 "${MON}" success new-1
+mkrun shared.yaml 522 "${MON2}" success new-2
+mkrun shared.yaml 523 "2026-10-11T16:50:00Z" success old-1
+run_check "${tmp}/c5c.out" "${WED_NOW}" "new-1,new-2"
+expect_line "旧端末の成功を挟んだ晩 → x は pending" "${tmp}/c5c.out" '^pending +A mcp-a shared.yaml #x '
 
 log "(c6) job の runner_name が空・旧端末が混ざった run は数えない"
 reset_data

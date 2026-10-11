@@ -93,7 +93,6 @@ table="$(jq -n --argjson units "${units}" --slurpfile runs "${runs_file}" --argj
   ymd = ->(t) { Time.at(t + JST).utc.strftime("%Y-%m-%d") }
   day0 = ((since + JST) / 86400) * 86400 - JST       # SINCE の日本時間の 0 時
   dates = (0..((now - day0) / 86400)).map { |i| day0 + i * 86400 }
-  bad = %w[failure cancelled timed_out]
   rows = []
 
   units.group_by { |u| u["repo"] + "/" + u["workflow"] }.each do |key, us|
@@ -132,7 +131,9 @@ table="$(jq -n --argjson units "${units}" --slurpfile runs "${runs_file}" --argj
         a = d + hhmm.(su[0]["at"])
         b = d + hhmm.(su[0]["deadline"])
         win = rs.select { |r| t = ep.(r["created_at"]); t >= a && t <= b }
-        [su, win.select { |r| r["conclusion"] == "success" && r["on_new"] }, win.select { |r| bad.include?(r["conclusion"]) }]
+        # 共有の単位は見分けられないので、窓の中に「新端末での成功」以外の run（失敗・実行中・待機中・
+        # 旧端末での成功など）が 1 件でもあれば、その晩は採用しない
+        [su, win.select { |r| r["conclusion"] == "success" && r["on_new"] }, win.reject { |r| r["conclusion"] == "success" && r["on_new"] }]
       end
       if per_slot.any? { |_, _, f| !f.empty? }
         fail_date ||= d
@@ -150,7 +151,7 @@ table="$(jq -n --argjson units "${units}" --slurpfile runs "${runs_file}" --argj
       chosen[1].each { |su, g, _| su.sort_by { |u| u["ord"] }.each_with_index { |u, i| assign[u["ord"]] = g[i]["html_url"] } }
     end
     why =
-      if fail_date then "#{ymd.(fail_date)} の夜の窓に失敗・取り消し・時間切れの run があるため数えない"
+      if fail_date then "#{ymd.(fail_date)} の夜の窓に新端末での成功以外の run（失敗・実行中・旧端末など）があるため数えない"
       elsif !good.empty? then "1 晩に必要な成功がそろっていない（最多 #{[best[0], 0].max}/#{us.size}。別々の晩の成功は足さない）"
       elsif other > 0 then "成功は #{other} 回あるが、新端末の実行役ではない"
       else "SINCE 以降の成功なし" end
