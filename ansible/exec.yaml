@@ -8,7 +8,9 @@
     - dotfiles
     - github
     - mise
+    - uv_tools
     - go
     - npm
     - vscode
     - nightly_launcher
+    - moomoo

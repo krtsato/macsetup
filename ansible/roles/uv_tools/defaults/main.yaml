@@ -1,0 +1,6 @@
+# uv で入れる道具と、固定する版。
+# nlm（notebooklm-mcp-cli）は mcp-notebooklm が版を前提にしているので、上げるときは
+# mcp-notebooklm 側の対応を先に入れる。点検 `make doctor` も同じ版を見る（roles/doctor/vars）。
+uv_tools_packages:
+  - name: notebooklm-mcp-cli
+    version: "0.9.6"

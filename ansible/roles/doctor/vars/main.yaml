@@ -280,6 +280,7 @@ doctor_launcher_state_glob: "dev/me/watcher/.launcher/state-*.json"
 
 # --- 6. 道具と接続役 ----------------------------------------------------------------
 doctor_nlm_path: ".local/bin/nlm"
+# 入れる側の正本は roles/uv_tools/defaults/main.yaml。版を上げるときは両方を揃える
 doctor_nlm_version: "0.9.6"
 doctor_commands:
   - claude

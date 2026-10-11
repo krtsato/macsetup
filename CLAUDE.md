@@ -35,12 +35,14 @@ npx markdownlint-cli2 --config ~/dev/me/dotfiles/.markdownlint.yaml <file>
 | 4 | `dotfiles` | `link-symbolic-dotfiles.sh` でシンボリックリンク作成 |
 | 5 | `github` | `gh auth` 確認 ＋ SSH 鍵の生成・登録 |
 | 6 | `mise` | `install-mise-tools.sh` で言語ツール |
-| 7 | `go` | `go install` でバイナリ |
-| 8 | `npm` | `npm install -g` でグローバルパッケージ（textlint など） |
-| 9 | `vscode` | `install-vscode-extensions.sh` で拡張機能 |
-| 10 | `nightly_launcher` | `krtsato/watcher` を取得し、その `plan.json` の枠ごとに LaunchAgent を生成・登録 |
+| 7 | `uv_tools` | `uv tool install` で版を固定した道具（NotebookLM の `nlm`） |
+| 8 | `go` | `go install` でバイナリ |
+| 9 | `npm` | `npm install -g` でグローバルパッケージ（textlint など） |
+| 10 | `vscode` | `install-vscode-extensions.sh` で拡張機能 |
+| 11 | `nightly_launcher` | `krtsato/watcher` を取得し、その `plan.json` の枠ごとに LaunchAgent を生成・登録 |
+| 12 | `moomoo` | moomoo の接続役 OpenD のログ掃除 LaunchAgent を入れ、SDK のコンテナ image が無ければ作る。OpenD 本体は手で入れる |
 
-順序には依存がある。`nightly_launcher` は `gh` の認証（5）と `go`（7）が済んでいる必要がある。
+順序には依存がある。`nightly_launcher` は `gh` の認証（5）と `go`（8）が済んでいる必要がある。`moomoo` は trade-moomoo の複製が要る。
 
 ## パッケージを足すとき — 3 か所を揃える
 
