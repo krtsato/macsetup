@@ -10,7 +10,7 @@ macOS 自動セットアップリポジトリ。Ansible ＋ シェルスクリ�
 | --- | --- |
 | 新しい Mac を用意する手順・命令の一覧・ロール・手動作業 | [README.md](README.md) |
 | 買い替えで夜間の自動実行を移す手順（14 手順・戻し方） | [docs/cutover.md](docs/cutover.md) |
-| 点検 `make doctor` の見るものとPHASE ごとの期待 | [docs/doctor.md](docs/doctor.md) |
+| 点検 `make doctor` の見るものと PHASE ごとの期待 | [docs/doctor.md](docs/doctor.md) |
 | 秘密と記録を運ぶ `make secrets-*` の動きと決まり | [docs/secrets.md](docs/secrets.md) |
 | 入れるパッケージの一覧 | [.github/instructions/auto-setup/auto-setup.md](.github/instructions/auto-setup/auto-setup.md) |
 
@@ -156,7 +156,7 @@ make playbook EXTRA_VARS='runners_enabled=true nightly_launcher_enabled=true'
 
 ## 点検 `make doctor`
 
-`ansible/doctor.yaml`（ロール `doctor`）。読むだけで何も変更しない。見るものとPHASE ごとの期待は [docs/doctor.md](docs/doctor.md)。
+`ansible/doctor.yaml`（ロール `doctor`）。読むだけで何も変更しない。見るものと PHASE ごとの期待は [docs/doctor.md](docs/doctor.md)。
 
 | 項目 | 場所・決まり |
 | --- | --- |
