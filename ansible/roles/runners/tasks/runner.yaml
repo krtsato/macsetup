@@ -1,0 +1,167 @@
+# 実行役 1 体ぶん。runners_item = {repo, label, dir}
+- name: Check whether the runner is already registered
+  ansible.builtin.stat:
+    path: "{{ runners_home }}/{{ runners_item.dir }}/.runner"
+  register: runners_registered
+
+# 最新版を公式の SHA-256 つきで取る。版は固定しない（自動更新を許す。点検は最低版だけ見る）。
+# 公開された hash が無い・一致しないときは展開せずに失敗する。
+- name: Download and verify the latest runner
+  ansible.builtin.shell: |
+    set -euo pipefail
+    dir="{{ runners_home }}/{{ runners_item.dir }}"
+    if [ -f "${dir}/config.sh" ]; then
+      echo "present"
+      exit 0
+    fi
+    release="$(gh api repos/actions/runner/releases/latest)"
+    url="$(jq -r '.assets[] | select(.name | test("^actions-runner-osx-arm64-.*[.]tar[.]gz$")) | .browser_download_url' <<<"${release}" | head -1)"
+    [ -n "${url}" ] || { echo "osx-arm64 の配布物が見つからない" >&2; exit 1; }
+    want="$(jq -r '.body' <<<"${release}" | tr -d '\r' \
+      | sed -n 's/.*<!-- BEGIN SHA osx-arm64 -->\([0-9a-f]\{64\}\)<!-- END SHA osx-arm64 -->.*/\1/p' | head -1)"
+    [ -n "${want}" ] || { echo "リリースに osx-arm64 の SHA-256 が無い" >&2; exit 1; }
+    tmp="$(mktemp -d)"
+    trap 'rm -rf "${tmp}"' EXIT
+    curl -fsSL -o "${tmp}/runner.tar.gz" "${url}"
+    got="$(shasum -a 256 "${tmp}/runner.tar.gz" | cut -d' ' -f1)"
+    [ "${got}" = "${want}" ] || { echo "SHA-256 が一致しない（期待 ${want}、実際 ${got}）" >&2; exit 1; }
+    mkdir -p "${dir}"
+    tar -xzf "${tmp}/runner.tar.gz" -C "${dir}"
+    echo "extracted"
+  args:
+    executable: /bin/bash
+  environment:
+    PATH: "{{ runners_path }}"
+  register: runners_download
+  changed_when: "'extracted' in runners_download.stdout_lines"
+  failed_when: runners_download.rc != 0
+  when: not runners_registered.stat.exists
+
+# 登録用の鍵は 1 時間で切れる使い捨て。変数・ファイル・ログに残さず config.sh へ渡すだけ。
+# --replace は使わない。self-hosted・macOS・ARM64 のラベルは config.sh が自動で足す。
+- name: Register the runner
+  ansible.builtin.shell: |
+    set -euo pipefail
+    cd "{{ runners_home }}/{{ runners_item.dir }}"
+    token="$(gh api -X POST "repos/krtsato/{{ runners_item.repo }}/actions/runners/registration-token" --jq .token)"
+    [ -n "${token}" ] || { echo "登録鍵を取れない" >&2; exit 1; }
+    ./config.sh --unattended \
+      --url "https://github.com/krtsato/{{ runners_item.repo }}" \
+      --token "${token}" \
+      --name "{{ runners_item.label }}-{{ runners_suffix }}" \
+      --labels "{{ runners_item.label }}" \
+      --work _work >/dev/null
+    echo "registered"
+  args:
+    executable: /bin/bash
+  environment:
+    PATH: "{{ runners_path }}"
+  no_log: true
+  register: runners_register
+  changed_when: "'registered' in runners_register.stdout_lines"
+  failed_when: runners_register.rc != 0
+  when: not runners_registered.stat.exists
+
+# svc.sh は雛形から plist を作り直すので、雛形も SessionCreate=false にしておく
+# （true だと Claude がキーチェーンを読めず落ちる）。実体のあるすべての bin* が対象（bin は版つき dir への symlink）。
+# 注意: 実行役の自動更新は新しい bin.<版> を作り、その雛形は true に戻る。点検が見るのは
+# 常駐側の plist なので、実害があるのは svc.sh install を再度流すときだけ。
+- name: Make runner service templates SessionCreate=false
+  ansible.builtin.shell: |
+    set -euo pipefail
+    cd "{{ runners_home }}/{{ runners_item.dir }}"
+    patched=0
+    for d in bin*; do
+      [ -d "${d}" ] && [ ! -L "${d}" ] || continue
+      f="${d}/actions.runner.plist.template"
+      [ -f "${f}" ] || continue
+      cur="$(plutil -extract SessionCreate raw -o - "${f}" 2>/dev/null || true)"
+      if [ "${cur}" = "true" ]; then
+        plutil -replace SessionCreate -bool false "${f}"
+        patched=$((patched + 1))
+      fi
+    done
+    echo "patched=${patched}"
+  args:
+    executable: /bin/bash
+  environment:
+    PATH: "{{ runners_path }}"
+  register: runners_template
+  changed_when: "runners_template.stdout != 'patched=0'"
+  failed_when: runners_template.rc != 0
+
+# plist の名前は svc.sh の SVC_NAME が正本（svc.sh install の前でも分かる）。
+# svc.sh install は plist を書くだけで読み込まない（読み込むのは start。確認済み）。
+- name: Install the runner service file
+  ansible.builtin.shell: |
+    set -euo pipefail
+    cd "{{ runners_home }}/{{ runners_item.dir }}"
+    name="$(sed -n 's/^SVC_NAME="\(.*\)"$/\1/p' svc.sh | head -1)"
+    [ -n "${name}" ] || { echo "svc.sh から SVC_NAME を読めない" >&2; exit 1; }
+    plist="${HOME}/Library/LaunchAgents/${name// /_}.plist"
+    out=""
+    if [ ! -f "${plist}" ]; then
+      ./svc.sh install >/dev/null
+      out="installed"
+    fi
+    [ -f "${plist}" ] || { echo "${plist} ができていない" >&2; exit 1; }
+    cur="$(plutil -extract SessionCreate raw -o - "${plist}" 2>/dev/null || true)"
+    if [ "${cur}" = "true" ]; then
+      plutil -replace SessionCreate -bool false "${plist}"
+      out="${out} patched"
+    fi
+    echo "plist=${plist}"
+    [ -z "${out}" ] || echo "${out# }"
+  args:
+    executable: /bin/bash
+  environment:
+    PATH: "{{ runners_path }}"
+    HOME: "{{ runners_home }}"
+  register: runners_service
+  changed_when: runners_service.stdout_lines | length > 1
+  failed_when: runners_service.rc != 0
+
+# 先頭が mise の shims でなければ、残りを保ったまま先頭に足す。.env は触らない。
+- name: Put mise shims first in the runner .path
+  ansible.builtin.shell: |
+    set -euo pipefail
+    f="{{ runners_home }}/{{ runners_item.dir }}/.path"
+    shims="{{ runners_home }}/{{ runners_mise_shims }}"
+    if [ ! -f "${f}" ]; then
+      printf '%s' "${shims}:/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin" >"${f}"
+      echo "written"
+      exit 0
+    fi
+    cur="$(cat "${f}")"
+    if [ "${cur%%:*}" = "${shims}" ]; then
+      echo "ok"
+      exit 0
+    fi
+    printf '%s' "${shims}:${cur}" >"${f}"
+    echo "prepended"
+  args:
+    executable: /bin/bash
+  register: runners_dotpath
+  changed_when: "runners_dotpath.stdout != 'ok'"
+  failed_when: runners_dotpath.rc != 0
+
+# 起動は有効のときだけ。無効のときは何もしない（既に動いているものも止めない）。
+- name: Load the runner service
+  ansible.builtin.shell: |
+    set -euo pipefail
+    plist="{{ runners_service.stdout_lines[0] | regex_replace('^plist=', '') }}"
+    label="$(basename "${plist}" .plist)"
+    if launchctl print "gui/$(id -u)/${label}" >/dev/null 2>&1; then
+      echo "already loaded"
+      exit 0
+    fi
+    launchctl bootstrap "gui/$(id -u)" "${plist}"
+    echo "loaded"
+  args:
+    executable: /bin/bash
+  environment:
+    PATH: "{{ runners_path }}"
+  register: runners_load
+  changed_when: "runners_load.stdout == 'loaded'"
+  failed_when: runners_load.rc != 0
+  when: runners_enabled | bool

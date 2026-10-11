@@ -250,6 +250,7 @@ doctor_profile_repos:
 
 # --- 4. 実行役（5 体）---------------------------------------------------------------
 # dir はホームからの相対の導入先。label は GitHub 上のラベル。
+# 登録する側の一覧は roles/runners/defaults の runners_list（同じ内容。足し引きしたら両方直す）。
 doctor_runners:
   - repo: "mcp-mediable"
     label: "mediable-sync"

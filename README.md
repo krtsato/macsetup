@@ -84,8 +84,20 @@ Ansible の `github` ロールが gh ログイン状態の確認と SSH 鍵作�
 | 9 | `go` | Go ツールを `go install`（mise shims を PATH に含めて実行） |
 | 10 | `npm` | npm グローバルパッケージを `npm install -g`（mise shims を PATH に含めて実行）。textlint は Homebrew に formula がないため npm で導入する |
 | 11 | `vscode` | `./scripts/install-vscode-extensions.sh` |
-| 12 | `nightly_launcher` | `krtsato/watcher` を取得し、その `plan.json` の枠ごとに LaunchAgent を生成して登録 |
-| 13 | `moomoo` | trade-moomoo の定義から OpenD のログ掃除 LaunchAgent を入れ、SDK のコンテナ image `moomoo-sdk:latest` が無ければ作る（Docker Desktop が動いていなければ知らせて先へ進む） |
+| 12 | `runners` | 自前の実行役 5 体を登録し、常駐の設定（plist）まで作る。起動は `runners_enabled=true` のときだけ（既定は停止） |
+| 13 | `nightly_launcher` | `krtsato/watcher` を取得し、その `plan.json` の枠ごとに LaunchAgent を生成して登録。読み込むのは `nightly_launcher_enabled=true` か、既に読み込み済みの枠だけ |
+| 14 | `moomoo` | trade-moomoo の定義から OpenD のログ掃除 LaunchAgent を入れ、SDK のコンテナ image `moomoo-sdk:latest` が無ければ作る（Docker Desktop が動いていなければ知らせて先へ進む） |
+
+### 実行役と起動役の起動（切り替えの時だけ）
+
+新しい Mac では、実行役（`runners`）と夜の起動役（`nightly_launcher`）は**登録と常駐の設定まで作り、起動しません**
+（旧端末と同じ夜を二重に起動しないため）。旧端末が止まって空になったのを確かめてから、次を流します。
+
+```sh
+make playbook EXTRA_VARS='runners_enabled=true nightly_launcher_enabled=true'
+```
+
+登録済みの Mac（この Mac など）で既定のまま流しても、動いている実行役は止まりません。
 
 ### 夜の起動（`nightly_launcher`）
 

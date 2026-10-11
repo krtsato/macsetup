@@ -1,0 +1,42 @@
+# GitHub Actions の自前の実行役（5 体）を「登録と常駐の設定まで」用意する役割。
+# 既定では起動しない（runners_enabled: false）。起動は切り替えの時だけ:
+#   make playbook EXTRA_VARS='runners_enabled=true nightly_launcher_enabled=true'
+# 偽の false のときも、既に動いている実行役を止めることは決してしない。
+runners_enabled: false
+
+# 実行役の置き場の基準（検査で差し替える。既定は本物のホーム）
+runners_home: "{{ lookup('env', 'HOME') }}"
+
+# 検査用: gh・launchctl・plutil を探す PATH の先頭に足す場所（偽物を差し込む）。既定は空
+runners_path_prefix: ""
+runners_path: "{{ (runners_path_prefix ~ ':') if runners_path_prefix else '' }}/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin"
+
+# 実行役の名前の末尾。空なら端末名（scutil --get LocalHostName）から作る。
+# 旧端末の登録と名前が重ならないようにするためで、--replace は決して使わない
+# （同じ名前だと旧い登録を奪う）。
+runners_name_suffix: ""
+
+# mise の shims（.path の先頭に置く場所。ホームからの相対）
+runners_mise_shims: ".local/share/mise/shims"
+
+# 一覧の形は roles/doctor/vars/main.yaml の doctor_runners と同じ。
+# 5 体を足し引きしたら doctor_runners も同じに直す（相互参照。片方だけ直すと点検が黙ってずれる）。
+# - repo: krtsato/<repo> に登録する
+# - label: 用途のラベル。self-hosted・macOS・ARM64 は GitHub が自動で足す
+# - dir: ホームからの相対の導入先
+runners_list:
+  - repo: "mcp-mediable"
+    label: "mediable-sync"
+    dir: "dev/me/mcp-mediable/actions-runners"
+  - repo: "mcp-note"
+    label: "magazine-sync"
+    dir: "dev/me/mcp-note/actions-runners/magazine-sync"
+  - repo: "mcp-seeking-alpha"
+    label: "alpha-picks-sync"
+    dir: "dev/me/mcp-seeking-alpha/actions-runners/alpha-picks-sync"
+  - repo: "mcp-tradingview"
+    label: "tradingview-sync"
+    dir: "dev/me/mcp-tradingview/actions-runners"
+  - repo: "mcp-invest-knowledge"
+    label: "knowledge-sync"
+    dir: "dev/me/mcp-invest-knowledge/actions-runners"

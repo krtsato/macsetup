@@ -10,9 +10,11 @@
     fi
   environment:
     PATH: /opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin
-  register: watcher_repo
-  changed_when: "'Cloning into' in (watcher_repo.stdout + watcher_repo.stderr) or 'Fast-forward' in watcher_repo.stdout"
-  failed_when: watcher_repo.rc != 0
+  register: nightly_launcher_watcher_repo
+  changed_when: >-
+    'Cloning into' in (nightly_launcher_watcher_repo.stdout + nightly_launcher_watcher_repo.stderr)
+    or 'Fast-forward' in nightly_launcher_watcher_repo.stdout
+  failed_when: nightly_launcher_watcher_repo.rc != 0
 
 - name: Ensure launcher directories exist
   ansible.builtin.file:
@@ -41,11 +43,19 @@
 
 # Per slot, so that editing one does not restart the other -- which could be
 # running -- and so that a bootstrap that failed last time is retried.
+# A slot that is not loaded stays unloaded unless nightly_launcher_enabled is true;
+# a slot that is already loaded is reloaded after its plist changes.
 - name: Load the launch agents
   ansible.builtin.shell: |
     set -e
     label="{{ nightly_launcher_label }}.{{ item.slot.name }}"
-    if [ "{{ item.changed }}" = "False" ] && launchctl print "gui/$UID/$label" >/dev/null 2>&1; then
+    loaded=0
+    if launchctl print "gui/$UID/$label" >/dev/null 2>&1; then loaded=1; fi
+    if [ "$loaded" = 0 ] && [ "{{ nightly_launcher_enabled | bool | lower }}" != "true" ]; then
+      echo "skipped (disabled)"
+      exit 0
+    fi
+    if [ "{{ item.changed }}" = "False" ] && [ "$loaded" = 1 ]; then
       echo "already loaded"
       exit 0
     fi

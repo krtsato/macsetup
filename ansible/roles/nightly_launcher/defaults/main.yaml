@@ -1,2 +1,9 @@
 nightly_launcher_repo: "{{ lookup('env', 'HOME') }}/dev/me/watcher"
 nightly_launcher_label: com.krtsato.watcher.nightly-launcher
+
+# 常駐の plist は常に作るが、読み込む（起動する）のは次のときだけ:
+#   - nightly_launcher_enabled が真、または
+#   - その枠が既に読み込み済み（この Mac が plan.json の変更後に読み直す動きを保つ）
+# 新しい Mac は既定で停止のまま。切り替えの時に
+#   make playbook EXTRA_VARS='runners_enabled=true nightly_launcher_enabled=true'
+nightly_launcher_enabled: false
