@@ -1,0 +1,87 @@
+# 点検。何も変更しない（すべての task が changed_when: false）。
+# 最初の失敗で止まらず、失敗と警告を溜めて、最後に名前つきで一覧にしてから失敗させる。
+# 一覧の正本は vars/main.yaml、点検の本体は files/checks.sh。
+
+- name: Validate the phase
+  ansible.builtin.assert:
+    that:
+      - doctor_phase in doctor_phases
+    fail_msg: "doctor_phase は {{ doctor_phases | join(' / ') }} のどれか（指定: {{ doctor_phase }}）"
+    quiet: true
+
+- name: Start with empty failure and warning lists
+  ansible.builtin.set_fact:
+    doctor_failures: []
+    doctor_warnings: []
+
+# 各グループの入力。複製の場所と profile 名は GitHub から実行時に読む（ここには書かない）。
+# profile 名は checks.sh の中だけで使い、Ansible の変数にも出力にも渡さない（別名で表示する）。
+- name: Check the NotebookLM profile variables
+  ansible.builtin.include_tasks: run_group.yaml
+  vars:
+    doctor_group: profiles
+    doctor_group_input:
+      profile_repos: "{{ doctor_profile_repos }}"
+
+- name: Run the check groups
+  ansible.builtin.include_tasks: run_group.yaml
+  vars:
+    doctor_group: "{{ item.name }}"
+    doctor_group_input: "{{ item.input }}"
+  loop_control:
+    label: "{{ item.name }}"
+  loop:
+    - name: files
+      input:
+        entries: "{{ doctor_config_files + doctor_extra_config_files }}"
+        profile_repos: "{{ doctor_profile_repos }}"
+    - name: clones
+      input:
+        pairs: "{{ doctor_clones }}"
+        overrides: "{{ doctor_clone_dir_overrides }}"
+    - name: tools
+      input:
+        nlm_path: "{{ doctor_nlm_path }}"
+        nlm_version: "{{ doctor_nlm_version }}"
+        commands: "{{ doctor_commands }}"
+        docker_settings: "{{ doctor_docker_settings }}"
+    - name: logins
+      input:
+        admin_repos: "{{ doctor_runners | map(attribute='repo') | unique | list }}"
+        profile_repos: "{{ doctor_profile_repos }}"
+        runner_dir: "{{ doctor_runners | selectattr('repo', 'equalto', 'mcp-mediable') | map(attribute='dir') | first }}"
+        nlm_path: "{{ doctor_nlm_path }}"
+    - name: github
+      input:
+        secrets: "{{ doctor_github_secrets }}"
+        clones: "{{ doctor_clones }}"
+        variables: "{{ doctor_github_variables_extra }}"
+    - name: runners
+      input:
+        runners: "{{ doctor_runners }}"
+        mise_shims: "{{ doctor_mise_shims }}"
+    - name: launcher
+      input:
+        labels: "{{ doctor_launcher_labels }}"
+        state_glob: "{{ doctor_launcher_state_glob }}"
+    - name: opend
+      input:
+        host: "{{ doctor_opend_host }}"
+        port: "{{ doctor_opend_port }}"
+
+- name: Show the summary
+  ansible.builtin.debug:
+    msg: "{{ doctor_summary }}"
+  vars:
+    doctor_summary: >-
+      {{
+        ['点検 doctor_phase=' ~ doctor_phase ~ '（失敗 ' ~ (doctor_failures | length) ~ ' 件・警告 ' ~ (doctor_warnings | length) ~ ' 件）']
+        + (['--- 失敗 ---'] + doctor_failures if doctor_failures else [])
+        + (['--- 警告 ---'] + doctor_warnings if doctor_warnings else [])
+        + (['すべて合格'] if not doctor_failures and not doctor_warnings else [])
+      }}
+
+- name: Fail when any check failed
+  ansible.builtin.fail:
+    msg: "点検に失敗した項目が {{ doctor_failures | length }} 件ある（上の一覧を参照）"
+  when: doctor_failures | length > 0

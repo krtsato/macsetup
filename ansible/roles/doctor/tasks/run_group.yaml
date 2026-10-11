@@ -1,0 +1,20 @@
+# 1 グループぶんの点検を流し、FAIL・WARN の行を溜める。
+- name: "Check {{ doctor_group }}"
+  ansible.builtin.script:
+    cmd: "checks.sh {{ doctor_group }}"
+    executable: /bin/bash
+  environment:
+    PATH: "{{ doctor_home }}/.local/bin:/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin"
+    DOCTOR_PHASE: "{{ doctor_phase }}"
+    DOCTOR_HOME: "{{ doctor_home }}"
+    DOCTOR_LAUNCHAGENTS: "{{ doctor_launchagents_dir }}"
+    DOCTOR_NOW: "{{ doctor_now }}"
+    DOCTOR_INPUT: "{{ doctor_group_input | to_json }}"
+  register: doctor_result
+  changed_when: false
+  failed_when: doctor_result.rc != 0
+
+- name: "Collect the results of {{ doctor_group }}"
+  ansible.builtin.set_fact:
+    doctor_failures: "{{ doctor_failures + (doctor_result.stdout_lines | select('match', '^FAIL\\|') | map('regex_replace', '^FAIL\\|', '') | list) }}"
+    doctor_warnings: "{{ doctor_warnings + (doctor_result.stdout_lines | select('match', '^WARN\\|') | map('regex_replace', '^WARN\\|', '') | list) }}"

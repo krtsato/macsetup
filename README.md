@@ -19,6 +19,7 @@
 | `make setup`     | `bootstrap` 実行後にプレイブックを実行  | 初回セットアップに推奨                                                                     |
 | `make bootstrap` | Homebrew と Ansible を導入              | 初回のみ                                                                                   |
 | `make playbook`  | `ansible/exec.yaml` を localhost に実行 | `make playbook ANSIBLE_FLAGS='--ask-become-pass' EXTRA_VARS="github_ssh_key_type=ed25519"` |
+| `make doctor`    | 状態の点検（読むだけ）                  | `make doctor PHASE=pre-import`                                                             |
 | `make help`      | 簡易ヘルプ表示                          |                                                                                            |
 
 主要な変数
@@ -103,6 +104,46 @@ Ansible の `github` ロールが gh ログイン状態の確認と SSH 鍵作�
 見張り（`krtsato/watcher`）が数日後に報告しますが、気づくのは遅れます。
 
 補足: Brewfile は dotfiles リポジトリで管理し、`link-symbolic-dotfiles.sh` が `~/brewfile.me` へリンクします。プレイブック内のシェルは必要最小限の PATH で実行する設計です。
+
+## 点検（`make doctor`）
+
+端末の状態を**読むだけ**で点検します（何も変更しません）。最初の失敗で止まらず、失敗と警告を溜めて、
+最後に項目名（パス・リポジトリと名前・実行役）つきで一覧にし、失敗が 1 件でもあれば終了コードを非 0 にします。
+
+```sh
+make doctor                    # 稼働（既定）
+make doctor PHASE=pre-import   # 持ち込み前
+make doctor PHASE=cutover      # 切り替え中
+scripts/test-doctor.sh         # 壊して確かめる検査
+```
+
+| 見るもの | 内容 |
+| --- | --- |
+| 秘密と記録 | `~/.config` 配下の認証・処理済みの記録・受け箱と `~/.codex/auth.json`。存在・種別・権限だけ（中身は読まない） |
+| 手元の複製 | 各リポジトリの `*_CLONE_DIR`（8 組）を GitHub から読み、git の複製で origin が一致するか。ワークフローが呼ぶ入口ファイルも |
+| 道具 | `nlm`（固定版）・`docker info`・Docker の host networking・`claude`・`codex`・`gh` |
+| ログイン | `gh`・管理者権限・`codex`・`claude`・NotebookLM（終了コードだけを見る）。`gh`・`claude`・`codex` は実行役と同じ環境（`env -i` と実行役の `.path`）でも 1 回確かめる |
+| GitHub 側 | 移行に必須の秘密と変数（名前の有無だけ。全設定の棚卸しではない） |
+| 実行役・起動役 | `.path` の先頭が mise の shims・`SessionCreate=false`・停止/online・LaunchAgent の読み込み |
+| 接続役 | OpenD `127.0.0.1:11111`（ready では土曜 01:30〜月曜 01:30 以外は失敗、その間と他の段階は警告。日本時間） |
+
+段階ごとの期待:
+
+| 項目 | `pre-import` | `cutover` | `ready` |
+| --- | --- | --- | --- |
+| 持ち込む秘密と記録・codex/NotebookLM のログイン | 無いことを期待（あれば衝突の警告） | 有る | 有る |
+| 実行役 | 登録済み・停止中 | 登録済み・停止中 | GitHub 上で online・ラベル一致 |
+| 起動役 | plist あり・停止中 | plist あり・停止中 | 読み込み済み |
+| それ以外 | 必須 | 必須 | 必須 |
+
+ログインの確認の限界: 実行役と同じ環境での確認は PATH と環境変数の差を拾う。キーチェーンのセッションの差は
+plist の `SessionCreate=false` の点検が受け持つ。残る差（launchd から起こした process での確認）は、
+段 6 の実際の実行でしか確かめられない（点検は launchd の仕事を作らない）。
+NotebookLM のプロファイル名は出力へ出さず、`プロファイル1`・`プロファイル2` の別名で表示する。
+
+点検の一覧（パス・分類・権限・用途・実行役・入口ファイル）の正本は `ansible/roles/doctor/vars/main.yaml` です。
+複製の場所と NotebookLM のプロファイル名は書かず、GitHub の変数を実行時に読みます。
+テスト用に `doctor_home`・`doctor_launchagents_dir`・`doctor_extra_config_files`・`doctor_clone_dir_overrides` を差し替えられます。
 
 ## 手動作業
 
