@@ -249,9 +249,29 @@ group_tools() {
 # ready 以外の段階では警告のみ。
 # ---------------------------------------------------------------------------------
 group_opend() {
-  local host port now dow hh mm minutes required=0
+  local host port now dow hh mm minutes required=0 app login_item image cleanup items
   host="$(jin -r '.host')"
   port="$(jin -r '.port')"
+  app="$(jin -r '.app')"
+  login_item="$(jin -r '.login_item')"
+  image="$(jin -r '.image')"
+  cleanup="$(jin -r '.cleanup_label')"
+  # 再起動後も夜間に間に合うかは、待受の今の状態ではなく「自動で起動するか」で決まる
+  [ -d "${app}" ] || fail "OpenD: ${app} が無い（README の手動作業）"
+  if items="$(osascript -e 'tell application "System Events" to get the name of every login item' 2>/dev/null)"; then
+    case ", ${items}, " in
+      *", ${login_item}, "*) ;;
+      *) fail "OpenD: ログイン項目に ${login_item} が無い（再起動後に起動せず、夜間の取得が失敗する）" ;;
+    esac
+  else
+    warn "OpenD: ログイン項目を読めない（ターミナルへの自動化の許可が要る）"
+  fi
+  if docker info >/dev/null 2>&1; then
+    docker image inspect "${image}" >/dev/null 2>&1 \
+      || fail "moomoo: コンテナ image ${image} が無い（Docker Desktop を起動して make playbook）"
+  fi
+  launchctl print "gui/$(id -u)/${cleanup}" >/dev/null 2>&1 \
+    || fail "OpenD: ログ掃除 ${cleanup} が読み込まれていない"
   if nc -z -w 3 "${host}" "${port}" >/dev/null 2>&1; then
     return
   fi

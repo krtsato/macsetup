@@ -2,15 +2,19 @@
 # OpenD のログインと二段階認証、待受 127.0.0.1:11111、ログイン項目への登録、Docker Desktop の
 # host networking は人がやる（README の手動作業）。揃っているかは `make doctor` が見る。
 
-- name: Require the trade-moomoo clone
-  ansible.builtin.stat:
-    path: "{{ moomoo_repo }}/launchd/{{ moomoo_log_cleanup_label }}.plist"
-  register: moomoo_plist_src
-
-- name: Stop when the clone is missing
-  ansible.builtin.fail:
-    msg: "{{ moomoo_repo }} が無い。手元の複製を先に揃える（krtsato/trade-moomoo）"
-  when: not moomoo_plist_src.stat.exists
+# 段 4 で手元の複製をまとめて揃えるまでは、watcher と同じくここで取得する（無ければ setup 全体を止めない）
+- name: Ensure the trade-moomoo clone is present
+  ansible.builtin.shell: |
+    if [ -d "{{ moomoo_repo }}/.git" ]; then
+      echo "present"
+    else
+      gh repo clone krtsato/trade-moomoo "{{ moomoo_repo }}"
+    fi
+  environment:
+    PATH: /opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin
+  register: moomoo_clone
+  changed_when: "'Cloning into' in (moomoo_clone.stdout + moomoo_clone.stderr)"
+  failed_when: moomoo_clone.rc != 0
 
 - name: Check that OpenD is installed
   ansible.builtin.stat:
@@ -24,10 +28,11 @@
       ログイン・二段階認証・待受 127.0.0.1:11111・ログイン項目への登録を行う（README の手動作業）
   when: not moomoo_opend.stat.exists
 
-# 定義の正本は trade-moomoo にある。写しを置くだけで、中身はここで書かない。
+# trade-moomoo の launchd/ にある見本は絶対パスで書かれているので、ここで HOME と複製の場所から作る。
+# 中身（時刻 03:00・保持 7 日）は見本と同じにしてある。
 - name: Install the OpenD log cleanup agent
-  ansible.builtin.copy:
-    src: "{{ moomoo_plist_src.stat.path }}"
+  ansible.builtin.template:
+    src: opend-log-cleanup.plist.j2
     dest: "{{ lookup('env', 'HOME') }}/Library/LaunchAgents/{{ moomoo_log_cleanup_label }}.plist"
     mode: "0644"
   register: moomoo_log_cleanup

@@ -168,7 +168,7 @@ CLI では変更できない、または sudo 権限が必要な項目は GUI �
 | Touch ID | 指紋を追加（System Settings > Touch ID & Password） |
 | 入力ソース | Google 日本語入力を有効化し、英字/かな切替を設定（System Settings > Keyboard > Input Sources） |
 | Terminal フォント | Terminal.app のプロファイルで VSCode の settings.json と同等の Nerd Font（例: FiraCodeNerdFontCompleteM-Retina）を手動設定 |
-| moomoo OpenD | <https://www.moomoo.com/download/OpenAPI> から GUI 版を入れ、ログインと二段階認証、待受を `127.0.0.1`・ポート `11111` に、**ログイン項目に登録**（再起動後も火〜土の夜間に要る）。詳細は trade-moomoo の README |
+| moomoo OpenD | <https://www.moomoo.com/download/OpenAPI> から GUI 版を入れ、ログインと二段階認証、待受を `127.0.0.1`・ポート `11111` に、**ログイン項目に登録**（再起動後も火〜土の夜間に要る）。**登録後に一度再起動し、`make doctor` で待受とログイン項目を確かめる**。詳細は trade-moomoo の README |
 | Docker Desktop | 初回起動の同意、Settings → Resources → Network → **Enable host networking**（moomoo のコンテナが OpenD に届くため）。その後 `make playbook` を流し直すと image が作られる |
 
 iCloud 同期項目

@@ -54,6 +54,15 @@ run_doctor "${tmp}/i.out" -e '{"doctor_extra_config_files":[{"path":".config/doc
 rm -rf "${linkdir}"
 expect_broken "symlinked secret" "${tmp}/i.out" "${rc}" ".config/doctor-test-symlink/linked.json: シンボリックリンク"
 
+# (j) OpenD まわり 4 点（本体・ログイン項目・image・ログ掃除）をすべて壊す
+log "(j) OpenD まわりが欠けている"
+rc=0
+run_doctor "${tmp}/j.out" -e '{"doctor_opend_app":"/Applications/doctor-test-none.app","doctor_opend_login_item":"doctor-test-none","doctor_moomoo_image":"doctor-test-none:latest","doctor_opend_cleanup_label":"com.krtsato.doctor-test-none"}' || rc=$?
+expect_broken "OpenD app missing" "${tmp}/j.out" "${rc}" "doctor-test-none.app が無い"
+expect_broken "OpenD login item missing" "${tmp}/j.out" "${rc}" "ログイン項目に doctor-test-none が無い"
+expect_broken "moomoo image missing" "${tmp}/j.out" "${rc}" "image doctor-test-none:latest が無い"
+expect_broken "log cleanup not loaded" "${tmp}/j.out" "${rc}" "com.krtsato.doctor-test-none が読み込まれていない"
+
 # (b) 存在しない複製のパス
 log "(b) 存在しない複製のパス"
 rc=0

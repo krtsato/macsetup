@@ -291,3 +291,8 @@ doctor_commands:
 doctor_docker_settings: "Library/Group Containers/group.com.docker/settings-store.json"
 doctor_opend_host: "127.0.0.1"
 doctor_opend_port: 11111
+# 入れる側は roles/moomoo（OpenD 本体とログイン項目は手作業）
+doctor_opend_app: /Applications/moomoo_OpenD.app
+doctor_opend_login_item: moomoo_OpenD
+doctor_moomoo_image: moomoo-sdk:latest
+doctor_opend_cleanup_label: com.krtsato.opend-log-cleanup
