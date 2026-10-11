@@ -23,5 +23,9 @@ rm -rf "${tmp}/watcher" && mkdir "${tmp}/watcher"
 out="$(run || true)"; check "(c) git の複製でない" "git の複製でない" "${out}"
 rm -rf "${tmp}/watcher" && git init -q "${tmp}/watcher" && git -C "${tmp}/watcher" remote add origin https://github.com/krtsato/not-watcher.git
 out="$(run || true)"; check "(d) origin が違う" "origin が krtsato/watcher でない" "${out}"
+# (e) 変数が別の複製の中の下位フォルダを指している
+rm -rf "${tmp}/watcher" && git init -q "${tmp}/outer" && git -C "${tmp}/outer" remote add origin https://github.com/krtsato/watcher.git && mkdir "${tmp}/outer/watcher"
+out="$(PATH=/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin ansible-playbook -i ansible/hosts "${play}" -e "repos_root=${tmp}/outer" -e '{"repos_list":[{"name":"watcher","vars":[]}]}' </dev/null 2>&1 | cat || true)"
+check "(e) 別の複製の中" "別の複製" "${out}"
 echo "==> 合格 ${passed} / 不合格 ${failed}"
 [ "${failed}" -eq 0 ]

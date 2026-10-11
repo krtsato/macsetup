@@ -17,15 +17,21 @@
     {% endfor %}
     dir="${dir:-{{ repos_root }}/${name}}"
     if [ -e "${dir}" ]; then
-      url="$(git -C "${dir}" config --get remote.origin.url 2>/dev/null)" \
+      # git -C は親へ遡って探すので、その場所が複製の最上位そのものかを確かめる
+      top="$(git -C "${dir}" rev-parse --show-toplevel 2>/dev/null)" \
         || { echo "${dir}: git の複製でない" >&2; exit 1; }
+      [ "$(cd "${top}" && pwd -P)" = "$(cd "${dir}" && pwd -P)" ] \
+        || { echo "${dir}: git の複製でない（別の複製 ${top} の中）" >&2; exit 1; }
+      url="$(git -C "${dir}" config --get remote.origin.url 2>/dev/null)" \
+        || { echo "${dir}: origin が無い" >&2; exit 1; }
       re="^(https://github\.com/|git@github\.com:|ssh://git@github\.com/)krtsato/${name}(\.git)?$"
       [[ "${url}" =~ ${re} ]] || { echo "${dir}: origin が krtsato/${name} でない" >&2; exit 1; }
       echo "present"
       exit 0
     fi
     mkdir -p "$(dirname "${dir}")"
-    gh repo clone "krtsato/${name}" "${dir}"
+    # gh の git_protocol は新しい端末で https が既定なので、SSH を明示する（github 役割が鍵を登録済み）
+    git clone "git@github.com:krtsato/${name}.git" "${dir}"
     echo "cloned"
   args:
     executable: /bin/bash
