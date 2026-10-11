@@ -4,17 +4,20 @@
     path: "{{ runners_home }}/{{ runners_item.dir }}/.runner"
   register: runners_registered
 
-# 最新版を公式の SHA-256 つきで取る。版は固定しない（自動更新を許す。点検は最低版だけ見る）。
+# 公式の SHA-256 つきで取る（版は runners_version。latest か固定の版）。自動更新は許す。
 # 公開された hash が無い・一致しないときは展開せずに失敗する。
-- name: Download and verify the latest runner
+# .runner が無いのに置き場が空でないとき（途中まで進んだ跡）は、検証していない config.sh へ
+# 登録鍵を渡さないよう、自動で消さずに失敗する。
+- name: Download and verify the runner
   ansible.builtin.shell: |
     set -euo pipefail
     dir="{{ runners_home }}/{{ runners_item.dir }}"
-    if [ -f "${dir}/config.sh" ]; then
-      echo "present"
-      exit 0
+    if [ -n "$(ls -A "${dir}" 2>/dev/null)" ]; then
+      echo "${dir}: 登録されていない（.runner が無い）のに空でない。途中で止まった跡なので、中身を人が消してからもう一度流してください" >&2
+      exit 1
     fi
-    release="$(gh api repos/actions/runner/releases/latest)"
+    endpoint="repos/actions/runner/releases/{{ 'latest' if runners_version == 'latest' else 'tags/v' ~ runners_version }}"
+    release="$(gh api "${endpoint}")"
     url="$(jq -r '.assets[] | select(.name | test("^actions-runner-osx-arm64-.*[.]tar[.]gz$")) | .browser_download_url' <<<"${release}" | head -1)"
     [ -n "${url}" ] || { echo "osx-arm64 の配布物が見つからない" >&2; exit 1; }
     want="$(jq -r '.body' <<<"${release}" | tr -d '\r' \
@@ -165,3 +168,34 @@
   changed_when: "runners_load.stdout == 'loaded'"
   failed_when: runners_load.rc != 0
   when: runners_enabled | bool
+
+# 今回起動したときだけ、GitHub 上で online になるのを待つ（既に読み込み済みなら見ない）。
+# 名前は .runner の agentName（先頭の BOM は除く）。
+- name: Wait until the runner is online
+  ansible.builtin.shell: |
+    set -euo pipefail
+    name="$(tr -d '\357\273\277' <"{{ runners_home }}/{{ runners_item.dir }}/.runner" | jq -r .agentName)"
+    [ -n "${name}" ] && [ "${name}" != "null" ] || { echo "{{ runners_item.dir }}/.runner から名前を読めない" >&2; exit 1; }
+    waited=0
+    while :; do
+      status="$(gh api "repos/krtsato/{{ runners_item.repo }}/actions/runners?per_page=100" \
+        | jq -r --arg n "${name}" '.runners[] | select(.name == $n) | .status' | head -1)"
+      if [ "${status}" = "online" ]; then
+        echo "online"
+        exit 0
+      fi
+      if [ "${waited}" -ge "{{ runners_online_timeout }}" ]; then
+        echo "実行役 ${name}（krtsato/{{ runners_item.repo }}）が {{ runners_online_timeout }} 秒以内に online にならなかった（状態: ${status:-見つからない}）" >&2
+        exit 1
+      fi
+      sleep "{{ runners_online_interval }}"
+      waited=$((waited + {{ runners_online_interval }}))
+    done
+  args:
+    executable: /bin/bash
+  environment:
+    PATH: "{{ runners_path }}"
+  register: runners_online
+  changed_when: false
+  failed_when: runners_online.rc != 0
+  when: runners_enabled | bool and (runners_load.stdout | default('')) == 'loaded'

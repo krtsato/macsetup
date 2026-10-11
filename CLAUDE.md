@@ -88,14 +88,15 @@ make playbook EXTRA_VARS='runners_enabled=true nightly_launcher_enabled=true'
 | --- | --- |
 | 一覧 | `roles/runners/defaults/main.yaml` の `runners_list`。`roles/doctor/vars/main.yaml` の `doctor_runners` と同じ内容（足し引きしたら両方直す） |
 | 名前 | `<ラベル>-<端末名>`（`scutil --get LocalHostName`、`runners_name_suffix` で上書き）。`--replace` は使わない |
-| 取得 | 最新版を `gh api` で取り、リリース本文の SHA-256 と照合。一致しない・無いときは展開せず失敗。版は固定しない |
+| 取得 | `runners_version`（既定 `latest`、`2.338.0` のように固定も可）の配布物を `gh api` で取り、リリース本文の SHA-256 と照合。一致しない・無いときは展開せず失敗。固定しても自動更新は有効 |
+| 途中の跡 | `.runner` が無いのに置き場が空でないときは、検証していない `config.sh` へ鍵を渡さないよう失敗する（消すのは人） |
 | 冪等 | `.runner` がある（登録済み）なら取得も登録もしない。この Mac で流しても既存の実行役は止まらない |
 | 雛形 | 実体のある `bin*/actions.runner.plist.template` を `SessionCreate=false` に直す。自動更新で増える `bin.<版>` の雛形は true に戻るが、点検が見るのは常駐側の plist |
 | `.path` | 先頭を mise の shims にする（無ければ作り、あれば残りを保って先頭に足す）。`.env` は触らない |
-| 起動 | `runners_enabled` が真のときだけ `launchctl bootstrap`。偽のときは何もしない |
+| 起動 | `runners_enabled` が真のときだけ `launchctl bootstrap` し、今回起動したものは GitHub 上で online になるまで待つ（`runners_online_timeout` 既定 120 秒・`runners_online_interval` 既定 5 秒。来なければ名前つきで失敗）。偽のときは何もしない |
 | 起動役 | plist は常に作る。読み込むのは `nightly_launcher_enabled` が真か、その枠が既に読み込み済みのとき（この Mac は `plan.json` の変更後に読み直す動きを保つ） |
 | 登録鍵 | 使い捨て。`no_log: true` で、`config.sh` へ渡すだけ。ファイルにもログにも残さない |
-| 検査 | `scripts/test-runners.sh`（偽の `gh`・`launchctl`・`config.sh` で、登録の引数・鍵が出力に出ないこと・SHA 不一致での失敗・起動が 1 回だけ・登録済みで何もしないことを確かめる） |
+| 検査 | `scripts/test-nightly-launcher.sh`（起動役の読み込み規則 4 通り）と `scripts/test-runners.sh`（偽の `gh`・`launchctl`・`config.sh` で、登録の引数・鍵が出力に出ないこと・SHA 不一致での失敗・起動が 1 回だけ・online 待ち・版の固定・途中の跡で止まること・登録済みで何もしないことを確かめる） |
 
 ## 点検 `make doctor`
 

@@ -5,6 +5,7 @@
 # (b) SHA-256 の不一致（と hash の欠落）は失敗し、展開しない
 # (c) runners_enabled=true で起動は 1 回だけ（2 回目は呼ばない）
 # (d) 登録済み（.runner あり）はダウンロードも登録もしない
+# (e) .runner が無く置き場が空でないなら失敗 (f)(g) 起動後に online を待つ (h) 版の固定
 set -euo pipefail
 cd "$(dirname "$0")/.."
 tmp="$(mktemp -d)"
@@ -23,7 +24,16 @@ cat >"${fake}/gh" <<'EOF'
 d="$(dirname "$0")"
 echo "$*" >>"${d}/gh-calls.log"
 case "$*" in
-  "api repos/actions/runner/releases/latest") cat "${d}/release.json" ;;
+  "api repos/actions/runner/releases/latest" | "api repos/actions/runner/releases/tags/v9.9.9") cat "${d}/release.json" ;;
+  "api repos/krtsato/"*"/actions/runners?per_page=100")
+    # online-mode: soon なら 2 回目の問い合わせから online、never なら online にならない、空なら常に online
+    n=$(($(cat "${d}/polls" 2>/dev/null || echo 0) + 1)); echo "${n}" >"${d}/polls"
+    st=online
+    m="$(cat "${d}/online-mode" 2>/dev/null || true)"
+    [ "${m}" = never ] && st=offline
+    [ "${m}" = soon ] && [ "${n}" -lt 2 ] && st=offline
+    n2="$(tr -d '\357\273\277' <"${d}/last-name")"
+    echo "{\"runners\":[{\"name\":\"${n2}\",\"status\":\"${st}\"}]}" ;;
   "api -X POST repos/krtsato/"*"/actions/runners/registration-token --jq .token") echo "FAKE-TOKEN-123" ;;
   *) echo "unexpected gh call: $*" >&2; exit 1 ;;
 esac
@@ -71,7 +81,8 @@ echo "$*" >>./config.args
 name=""
 while [ $# -gt 0 ]; do [ "$1" = "--name" ] && name="$2"; shift; done
 repo="$(pwd | sed 's:.*/::')"
-echo '{}' >.runner
+printf '\357\273\277{"agentName":"%s"}' "${name}" >.runner
+echo "${name}" >"@FAKE@/last-name"
 cat >svc.sh <<SVC
 #!/bin/bash
 SVC_NAME="actions.runner.krtsato-${repo}.${name}"
@@ -83,6 +94,7 @@ echo "\${plist}" >.service
 SVC
 chmod +x svc.sh
 EOF
+sed "s#@FAKE@#${fake}#" "${src}/config.sh" >"${src}/config.sh.new" && mv "${src}/config.sh.new" "${src}/config.sh"
 chmod +x "${src}/config.sh"
 tar -czf "${tmp}/runner.tar.gz" -C "${src}" .
 sha="$(shasum -a 256 "${tmp}/runner.tar.gz" | cut -d' ' -f1)"
@@ -172,6 +184,37 @@ assert "(d) 既存の plist はそのまま" test "$(shasum "${tmp}/hd/Library/L
 assert "(d) 雛形は false になる" test "$(session "${d}/bin/actions.runner.plist.template")" = false
 assert "(d) .path は残りを保って先頭に shims" test "$(cat "${d}/.path")" = "${tmp}/hd/.local/share/mise/shims:/usr/bin:/bin"
 run hd false; check "(d) 2 回目は何もしない" ok "changed=0"
+
+# (e) .runner が無いのに置き場が空でない（途中で止まった跡）: 検証せずに登録しない
+reset he; release "${good_body}"
+mkdir -p "${tmp}/he/runner"
+printf '#!/bin/bash\ntouch ./executed\n' >"${tmp}/he/runner/config.sh"; chmod +x "${tmp}/he/runner/config.sh"
+run he false; check "(e) 途中で止まった跡は失敗" fail "途中で止まった跡"
+assert "(e) 登録鍵を取らない" bash -c "! grep -q registration-token '${fake}/gh-calls.log'"
+assert "(e) 既存の config.sh を実行しない" test ! -e "${tmp}/he/runner/executed"
+assert "(e) 自動で消さない" test -f "${tmp}/he/runner/config.sh"
+
+# (f) 起動後に online を待つ: 2 回目の問い合わせで online
+reset hf; release "${good_body}"; echo soon >"${fake}/online-mode"; rm -f "${fake}/polls"
+run hf true -e runners_online_interval=1 -e runners_online_timeout=10; check "(f) online を待って成功" ok "failed=0"
+assert "(f) 問い合わせは 2 回" test "$(cat "${fake}/polls")" = 2
+# (g) online にならない: 小さな timeout で名前つきで失敗
+reset hg; release "${good_body}"; echo never >"${fake}/online-mode"; rm -f "${fake}/polls"
+run hg true -e runners_online_interval=1 -e runners_online_timeout=2; check "(g) online にならなければ失敗" fail "fakelabel-testhost（krtsato/fakerepo）が 2 秒以内に online にならなかった"
+# 既に読み込み済みで起動しない 2 回目は待たない
+reset hf; release "${good_body}"; echo soon >"${fake}/online-mode"; rm -f "${fake}/polls"
+run hf true -e runners_online_interval=1 -e runners_online_timeout=10
+run hf true -e runners_online_interval=1 -e runners_online_timeout=10; check "(f) 2 回目は待たない" ok "changed=0"
+assert "(f) 2 回目は問い合わせない" test "$(cat "${fake}/polls")" = 2
+rm -f "${fake}/online-mode"
+
+# (h) 版の固定: releases/tags/v<版> を取り、同じ照合をする
+reset hh; release "${good_body}"
+run hh false -e runners_version=9.9.9; check "(h) 固定の版で成功" ok "failed=0"
+assert "(h) tags/v9.9.9 を取る" grep -qx "api repos/actions/runner/releases/tags/v9.9.9" "${fake}/gh-calls.log"
+assert "(h) latest は取らない" bash -c "! grep -q releases/latest '${fake}/gh-calls.log'"
+reset hh; release "${good_body}"
+run hh false -e runners_version=1.2.3; check "(h) 知らない版は失敗" fail "unexpected gh call"
 
 echo "==> 合格 ${passed} / 不合格 ${failed}"
 [ "${failed}" -eq 0 ]

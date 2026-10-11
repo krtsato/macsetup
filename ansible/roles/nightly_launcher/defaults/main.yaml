@@ -1,4 +1,6 @@
-nightly_launcher_repo: "{{ lookup('env', 'HOME') }}/dev/me/watcher"
+# 検査で差し替える: LaunchAgents と mise shims の基準になるホーム（既定は本物のホーム）
+nightly_launcher_home: "{{ lookup('env', 'HOME') }}"
+nightly_launcher_repo: "{{ nightly_launcher_home }}/dev/me/watcher"
 nightly_launcher_label: com.krtsato.watcher.nightly-launcher
 
 # 常駐の plist は常に作るが、読み込む（起動する）のは次のときだけ:
@@ -7,3 +9,7 @@ nightly_launcher_label: com.krtsato.watcher.nightly-launcher
 # 新しい Mac は既定で停止のまま。切り替えの時に
 #   make playbook EXTRA_VARS='runners_enabled=true nightly_launcher_enabled=true'
 nightly_launcher_enabled: false
+
+# 検査用: gh・launchctl を探す PATH の先頭に足す場所（偽物を差し込む）。既定は空
+nightly_launcher_path_prefix: ""
+nightly_launcher_path: "{{ (nightly_launcher_path_prefix ~ ':') if nightly_launcher_path_prefix else '' }}/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin"

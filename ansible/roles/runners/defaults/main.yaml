@@ -11,6 +11,15 @@ runners_home: "{{ lookup('env', 'HOME') }}"
 runners_path_prefix: ""
 runners_path: "{{ (runners_path_prefix ~ ':') if runners_path_prefix else '' }}/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin"
 
+# 取得する実行役の版。latest は最新の安定版、"2.338.0" のように書くとその版（releases/tags/v<版>）。
+# どちらでも公式の SHA-256 を照合する。固定しても実行役の自動更新は有効のまま
+# （点検は完全一致ではなく最低版以上を見る）。
+runners_version: latest
+
+# 起動した後、GitHub 上で online になるまで待つ秒数と確認の間隔（runners_enabled が真で今回起動したときだけ）
+runners_online_timeout: 120
+runners_online_interval: 5
+
 # 実行役の名前の末尾。空なら端末名（scutil --get LocalHostName）から作る。
 # 旧端末の登録と名前が重ならないようにするためで、--replace は決して使わない
 # （同じ名前だと旧い登録を奪う）。

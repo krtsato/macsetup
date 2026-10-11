@@ -1,5 +1,5 @@
-# One LaunchAgent per slot, generated from the watcher repo's plan.json so that
-# adding a slot there is the only edit needed.
+# 枠ごとに 1 本の LaunchAgent を、watcher リポジトリの plan.json から生成する。
+# 枠を足すときは plan.json だけを直せばよい。
 
 - name: Ensure watcher repository is present
   ansible.builtin.shell: |
@@ -9,7 +9,7 @@
       gh repo clone krtsato/watcher "{{ nightly_launcher_repo }}"
     fi
   environment:
-    PATH: /opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin
+    PATH: "{{ nightly_launcher_path }}"
   register: nightly_launcher_watcher_repo
   changed_when: >-
     'Cloning into' in (nightly_launcher_watcher_repo.stdout + nightly_launcher_watcher_repo.stderr)
@@ -23,7 +23,7 @@
     mode: "0755"
   loop:
     - "{{ nightly_launcher_repo }}/.launcher"
-    - "{{ lookup('env', 'HOME') }}/Library/LaunchAgents"
+    - "{{ nightly_launcher_home }}/Library/LaunchAgents"
 
 - name: Read the launcher plan
   ansible.builtin.slurp:
@@ -33,7 +33,7 @@
 - name: Install a launch agent per slot
   ansible.builtin.template:
     src: launchagent.plist.j2
-    dest: "{{ lookup('env', 'HOME') }}/Library/LaunchAgents/{{ nightly_launcher_label }}.{{ slot.name }}.plist"
+    dest: "{{ nightly_launcher_home }}/Library/LaunchAgents/{{ nightly_launcher_label }}.{{ slot.name }}.plist"
     mode: "0644"
   loop: "{{ (nightly_launcher_plan.content | b64decode | from_json).slots }}"
   loop_control:
@@ -41,10 +41,10 @@
     label: "{{ slot.name }}"
   register: nightly_launcher_agents
 
-# Per slot, so that editing one does not restart the other -- which could be
-# running -- and so that a bootstrap that failed last time is retried.
-# A slot that is not loaded stays unloaded unless nightly_launcher_enabled is true;
-# a slot that is already loaded is reloaded after its plist changes.
+# 枠ごとに行う。1 つを直しても、実行中かもしれないもう 1 つを再起動しないため、
+# また前回失敗した bootstrap をやり直すため。
+# 読み込まれていない枠は、nightly_launcher_enabled が真でない限り読み込まない。
+# 既に読み込まれている枠は、plist が変わったときだけ読み直す。
 - name: Load the launch agents
   ansible.builtin.shell: |
     set -e
@@ -67,3 +67,5 @@
     label: "{{ item.slot.name }}"
   register: nightly_launcher_load
   changed_when: "nightly_launcher_load.stdout == 'loaded'"
+  environment:
+    PATH: "{{ nightly_launcher_path }}"
