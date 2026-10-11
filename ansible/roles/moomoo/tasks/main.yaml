@@ -1,0 +1,82 @@
+# moomoo の接続役 OpenD のまわりを揃える。ログ掃除の LaunchAgent と、SDK のコンテナ image。
+# OpenD のログインと二段階認証、待受 127.0.0.1:11111、ログイン項目への登録、Docker Desktop の
+# host networking は人がやる（README の手動作業）。揃っているかは `make doctor` が見る。
+
+# 段 4 で手元の複製をまとめて揃えるまでは、watcher と同じくここで取得する（無ければ setup 全体を止めない）
+- name: Ensure the trade-moomoo clone is present
+  ansible.builtin.shell: |
+    if [ -d "{{ moomoo_repo }}/.git" ]; then
+      echo "present"
+    else
+      gh repo clone krtsato/trade-moomoo "{{ moomoo_repo }}"
+    fi
+  environment:
+    PATH: /opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin
+  register: moomoo_clone
+  changed_when: "'Cloning into' in (moomoo_clone.stdout + moomoo_clone.stderr)"
+  failed_when: moomoo_clone.rc != 0
+
+- name: Check that OpenD is installed
+  ansible.builtin.stat:
+    path: "{{ moomoo_opend_app }}"
+  register: moomoo_opend
+
+- name: Tell how to install OpenD
+  ansible.builtin.debug:
+    msg: >-
+      {{ moomoo_opend_app }} が無い。https://www.moomoo.com/download/OpenAPI から GUI 版を入れ、
+      ログイン・二段階認証・待受 127.0.0.1:11111・ログイン項目への登録を行う（README の手動作業）
+  when: not moomoo_opend.stat.exists
+
+# trade-moomoo の launchd/ にある見本は絶対パスで書かれているので、ここで HOME と複製の場所から作る。
+# 中身（時刻 03:00・保持 7 日）は見本と同じにしてある。
+- name: Install the OpenD log cleanup agent
+  ansible.builtin.template:
+    src: opend-log-cleanup.plist.j2
+    dest: "{{ lookup('env', 'HOME') }}/Library/LaunchAgents/{{ moomoo_log_cleanup_label }}.plist"
+    mode: "0644"
+  register: moomoo_log_cleanup
+
+# ログ掃除は夜間の処理と競合しないので、切り替え前でも読み込んでよい（実行役や起動役とは違う）。
+- name: Load the OpenD log cleanup agent
+  ansible.builtin.shell: |
+    set -e
+    label="{{ moomoo_log_cleanup_label }}"
+    if [ "{{ moomoo_log_cleanup.changed }}" = "False" ] && launchctl print "gui/$UID/$label" >/dev/null 2>&1; then
+      echo "already loaded"
+      exit 0
+    fi
+    launchctl bootout "gui/$UID/$label" 2>/dev/null || true
+    launchctl bootstrap "gui/$UID" "{{ moomoo_log_cleanup.dest }}"
+    echo "loaded"
+  environment:
+    PATH: /usr/bin:/bin
+  register: moomoo_log_cleanup_load
+  changed_when: "moomoo_log_cleanup_load.stdout == 'loaded'"
+  failed_when: moomoo_log_cleanup_load.rc != 0
+
+# bin/moomoo は image が無いと失敗するだけで、自分では作らない。Docker Desktop の初回起動は
+# 人がやるので、動いていないときは知らせて先へ進む（点検が後で拾う）。
+- name: Build the moomoo SDK image when it is missing
+  ansible.builtin.shell: |
+    set -e
+    if ! docker info >/dev/null 2>&1; then
+      echo "docker not running"
+      exit 0
+    fi
+    if docker image inspect "{{ moomoo_image }}" >/dev/null 2>&1; then
+      echo "image present"
+      exit 0
+    fi
+    docker build -t "{{ moomoo_image }}" "{{ moomoo_repo }}"
+    echo "built"
+  environment:
+    PATH: /opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin
+  register: moomoo_image_build
+  changed_when: "'built' in moomoo_image_build.stdout_lines"
+  failed_when: moomoo_image_build.rc != 0
+
+- name: Tell that the image still needs building
+  ansible.builtin.debug:
+    msg: "Docker Desktop が動いていないので {{ moomoo_image }} を作っていない。起動してから make playbook を流し直す"
+  when: "'docker not running' in moomoo_image_build.stdout_lines"

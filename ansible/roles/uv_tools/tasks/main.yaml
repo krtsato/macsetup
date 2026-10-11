@@ -1,0 +1,22 @@
+# 固定した版と違うときだけ入れ直す。`uv tool list` の 1 行目は「<名前> v<版>」。
+- name: Install uv tools at the pinned version
+  ansible.builtin.shell: |
+    set -eu
+    # 一覧を先に受けてから探す（パイプだと grep が早く抜けたとき uv 側の失敗と区別できない）
+    installed="$(uv tool list 2>/dev/null || true)"
+    if grep -qx "{{ item.name }} v{{ item.version }}" <<<"${installed}"; then
+      echo "already pinned"
+      exit 0
+    fi
+    uv tool install --force "{{ item.name }}=={{ item.version }}"
+    echo "installed"
+  args:
+    executable: /bin/bash
+  environment:
+    PATH: /opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin
+  loop: "{{ uv_tools_packages }}"
+  loop_control:
+    label: "{{ item.name }}=={{ item.version }}"
+  register: uv_tools_result
+  changed_when: "'installed' in uv_tools_result.stdout_lines"
+  failed_when: uv_tools_result.rc != 0

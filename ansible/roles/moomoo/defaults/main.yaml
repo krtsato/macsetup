@@ -1,0 +1,5 @@
+# moomoo の接続役 OpenD のまわり。OpenD 本体は公式サイトの GUI 版を手で入れる（README の手動作業）。
+moomoo_repo: "{{ lookup('env', 'HOME') }}/dev/me/trade-moomoo"
+moomoo_opend_app: /Applications/moomoo_OpenD.app
+moomoo_log_cleanup_label: com.krtsato.opend-log-cleanup
+moomoo_image: moomoo-sdk:latest

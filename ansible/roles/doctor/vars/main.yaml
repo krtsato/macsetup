@@ -280,6 +280,7 @@ doctor_launcher_state_glob: "dev/me/watcher/.launcher/state-*.json"
 
 # --- 6. 道具と接続役 ----------------------------------------------------------------
 doctor_nlm_path: ".local/bin/nlm"
+# 入れる側の正本は roles/uv_tools/defaults/main.yaml。版を上げるときは両方を揃える
 doctor_nlm_version: "0.9.6"
 doctor_commands:
   - claude
@@ -290,3 +291,8 @@ doctor_commands:
 doctor_docker_settings: "Library/Group Containers/group.com.docker/settings-store.json"
 doctor_opend_host: "127.0.0.1"
 doctor_opend_port: 11111
+# 入れる側は roles/moomoo（OpenD 本体とログイン項目は手作業）
+doctor_opend_app: /Applications/moomoo_OpenD.app
+doctor_opend_login_item: moomoo_OpenD
+doctor_moomoo_image: moomoo-sdk:latest
+doctor_opend_cleanup_label: com.krtsato.opend-log-cleanup

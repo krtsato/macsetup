@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+  <key>Label</key>
+  <string>com.krtsato.opend-log-cleanup</string>
+
+  <!-- Runs the OpenD log cleanup daily. Adjust the path if you move the harness. -->
+  <key>ProgramArguments</key>
+  <array>
+    <string>/bin/bash</string>
+    <string>{{ moomoo_repo }}/bin/opend-log-cleanup.sh</string>
+  </array>
+
+  <key>EnvironmentVariables</key>
+  <dict>
+    <key>RETENTION_DAYS</key>
+    <string>7</string>
+  </dict>
+
+  <!-- Daily at 03:00 local time. -->
+  <key>StartCalendarInterval</key>
+  <dict>
+    <key>Hour</key><integer>3</integer>
+    <key>Minute</key><integer>0</integer>
+  </dict>
+
+  <key>RunAtLoad</key>
+  <false/>
+
+  <key>StandardOutPath</key>
+  <string>{{ lookup('env', 'HOME') }}/Library/Logs/opend-log-cleanup.log</string>
+  <key>StandardErrorPath</key>
+  <string>{{ lookup('env', 'HOME') }}/Library/Logs/opend-log-cleanup.log</string>
+</dict>
+</plist>

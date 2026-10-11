@@ -286,25 +286,27 @@ killall SystemUIServer
 
 CLI では変更できない、または sudo 権限が必要な項目は GUI で設定する。
 
-| 項目                     | 設定内容                                                                                                                   |
-| ------------------------ | -------------------------------------------------------------------------------------------------------------------------- |
-| アクセシビリティ表示     | 視差効果を減らす、透明度を下げる、ポインタサイズを拡大、ポインタスクロール各種最速                                         |
-| コンピュータ名           | krtsato-macbook{model}-yyyy                                                                                                |
-| ディスプレイ             | 外付けディスプレイ解像度                                                                                                   |
-| ディスプレイ             | Night Shift スケジュール設定                                                                                               |
-| 日付と時計               | 日付を表示                                                                                                                 |
-| 通知                     | 編集                                                                                                                       |
-| Finder                   | サイドバー表示項目                                                                                                         |
-| iCloud                   | サインイン・各項目の同期設定                                                                                               |
-| Raycast                  | 設定のインポート                                                                                                           |
-| Microsoft Office         | インストール                                                                                                               |
-| 旧 PC からのデータ移行   | 経理書類など                                                                                                               |
-| GitHub ブラウザ認証      | `gh auth login` はブラウザ操作が必要。未ログインだと `github` ロールが停止するので先に完了する                             |
-| Touch ID                 | 指紋を追加（System Settings > Touch ID & Password）                                                                        |
-| 入力ソース               | Google 日本語入力を有効化し、英字/かな切替を設定（System Settings > Keyboard > Input Sources）                             |
-| Terminal フォント        | Terminal.app のプロファイルで VSCode の settings.json と同等の Nerd Font（例: FiraCodeNerdFontCompleteM-Retina）を手動設定 |
-| デフォルトシェル         | Homebrew の zsh (`/opt/homebrew/bin/zsh`) があればそれを設定。無ければ `/bin/zsh`                                          |
-| Spotlight ショートカット | [⌘Space を無効化](https://support.apple.com/ja-jp/guide/mac-help/mchlp2864/14.0/mac/14.0)                                  |
+| 項目 | 設定内容 |
+| --- | --- |
+| アクセシビリティ表示 | 視差効果を減らす、透明度を下げる、ポインタサイズを拡大、ポインタスクロール各種最速 |
+| コンピュータ名 | krtsato-macbook{model}-yyyy |
+| ディスプレイ | 外付けディスプレイ解像度 |
+| ディスプレイ | Night Shift スケジュール設定 |
+| 日付と時計 | 日付を表示 |
+| 通知 | 編集 |
+| Finder | サイドバー表示項目 |
+| iCloud | サインイン・各項目の同期設定 |
+| Raycast | 設定のインポート |
+| Microsoft Office | インストール |
+| 旧 PC からのデータ移行 | 経理書類など |
+| GitHub ブラウザ認証 | `gh auth login` はブラウザ操作が必要。未ログインだと `github` ロールが停止するので先に完了する |
+| Touch ID | 指紋を追加（System Settings > Touch ID & Password） |
+| 入力ソース | Google 日本語入力を有効化し、英字/かな切替を設定（System Settings > Keyboard > Input Sources） |
+| Terminal フォント | Terminal.app のプロファイルで VSCode の settings.json と同等の Nerd Font（例: FiraCodeNerdFontCompleteM-Retina）を手動設定 |
+| デフォルトシェル | Homebrew の zsh (`/opt/homebrew/bin/zsh`) があればそれを設定。無ければ `/bin/zsh` |
+| Spotlight ショートカット | [⌘Space を無効化](https://support.apple.com/ja-jp/guide/mac-help/mchlp2864/14.0/mac/14.0) |
+| moomoo OpenD | <https://www.moomoo.com/download/OpenAPI> から GUI 版を入れ、ログインと二段階認証、待受を `127.0.0.1`・ポート `11111` に、**ログイン項目に登録**（再起動後も火〜土の夜間に要る）。**登録後に一度再起動し、`make doctor` で待受とログイン項目を確かめる**。詳細は trade-moomoo の README |
+| Docker Desktop | 初回起動の同意、Settings → Resources → Network → **Enable host networking**（moomoo のコンテナが OpenD に届くため）。その後 `make playbook` を流し直すと image が作られる |
 
 iCloud 同期項目
 

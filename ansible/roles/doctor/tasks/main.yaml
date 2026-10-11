@@ -68,6 +68,10 @@
       input:
         host: "{{ doctor_opend_host }}"
         port: "{{ doctor_opend_port }}"
+        app: "{{ doctor_opend_app }}"
+        login_item: "{{ doctor_opend_login_item }}"
+        image: "{{ doctor_moomoo_image }}"
+        cleanup_label: "{{ doctor_opend_cleanup_label }}"
 
 - name: Show the summary
   ansible.builtin.debug:
