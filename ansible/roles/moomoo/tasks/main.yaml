@@ -2,7 +2,7 @@
 # OpenD のログインと二段階認証、待受 127.0.0.1:11111、ログイン項目への登録、Docker Desktop の
 # host networking は人がやる（README の手動作業）。揃っているかは `make doctor` が見る。
 
-# 段 4 で手元の複製をまとめて揃えるまでは、watcher と同じくここで取得する（無ければ setup 全体を止めない）
+# 複製は repos 役割が先に揃える。この役割だけを流したときに止まらないよう、無ければここでも取得する
 - name: Ensure the trade-moomoo clone is present
   ansible.builtin.shell: |
     if [ -d "{{ moomoo_repo }}/.git" ]; then
