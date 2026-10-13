@@ -52,6 +52,7 @@ Homebrew でインストールするパッケージ一覧。
 - cocoapods
 - coreutils
 - ffmpeg
+- firebase-cli
 - gh
 - ghostscript
 - git
@@ -70,6 +71,7 @@ Homebrew でインストールするパッケージ一覧。
 - poppler
 - pup
 - redis
+- ruby
 - starship
 - uv
 - watch
