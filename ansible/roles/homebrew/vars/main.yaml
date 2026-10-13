@@ -10,6 +10,7 @@ formulas:
   - cocoapods
   - coreutils
   - ffmpeg
+  - firebase-cli
   - gh
   - ghostscript
   - git
@@ -28,6 +29,7 @@ formulas:
   - poppler
   - pup
   - redis
+  - ruby
   - starship
   - uv
   - watch
