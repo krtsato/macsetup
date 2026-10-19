@@ -187,11 +187,10 @@ Flutter など `~/dev/me/dotfiles/mise/config.toml` に定義した開発ツー�
 ./scripts/install-mise-tools.sh
 ```
 
-Go Binaries をインストール。
+Go Binaries をインストール。golangci-lint は mise が版を管理するので、ここでは入れない（`~/go/bin` に入ると mise の版より先に見つかり、CI と違う版が走る）。
 
 ```sh
 go install github.com/air-verse/air@latest
-go install github.com/golangci/golangci-lint/cmd/golangci-lint@latest
 go install go.uber.org/mock/mockgen@latest
 go install golang.org/x/tools/gopls@latest
 go install github.com/deepmap/oapi-codegen/v2/cmd/oapi-codegen@latest
