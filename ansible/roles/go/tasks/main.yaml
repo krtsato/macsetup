@@ -1,3 +1,11 @@
+- name: Remove golangci-lint left by an earlier go install
+  # mise owns golangci-lint. A copy in ~/go/bin comes first on PATH and
+  # shadows the mise version, so a Mac set up before this change would keep
+  # running the old linter.
+  ansible.builtin.file:
+    path: "{{ lookup('env', 'HOME') }}/go/bin/golangci-lint"
+    state: absent
+
 - name: Install Go tools
   ansible.builtin.shell: |
     export PATH="$HOME/.local/share/mise/shims:/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin"
