@@ -8,7 +8,7 @@ main() {
   local brewfile_path=~/dev/me/dotfiles/brewfile.me
   local dotfiles_root=~/dev/me/dotfiles
 
-  link_dotfiles "$dotfiles_root" "$brewfile_path"
+  link_dotfiles "$dotfiles_root" "$brewfile_path" || exit 1
 }
 
 confirm_prerequisites() {
@@ -58,6 +58,7 @@ link_dotfiles() {
     [keybindings.json]=~/Library/Application\ Support/Code/User/keybindings.json
   )
 
+  local failed=0 link_path aside
   for name origin_dir in ${(kv)dot_files_dirs}; do
     # Skip if source and destination are identical (avoids self-symlink loops)
     if [[ "$dotfiles_root/$name" == "$origin_dir" ]]; then
@@ -66,10 +67,31 @@ link_dotfiles() {
     fi
 
     mkdir -p "$(dirname "$origin_dir")"
+    # A destination ending in "/" means "put the link inside this directory".
+    link_path="$origin_dir"
+    [[ "$origin_dir" == */ ]] && link_path="${origin_dir%/}/${name%/}"
+    # An app started before this script (Claude Code, Codex, Herdr, ...) may
+    # have created a real directory where the link goes; ln cannot replace a
+    # directory and the app would keep its defaults. Move it aside instead of
+    # deleting it, so its contents can still be checked.
+    if [[ -d "$link_path" && ! -L "$link_path" ]]; then
+      aside="${link_path}.bak-$(date +%Y%m%d-%H%M%S)"
+      log "move aside existing directory: $link_path -> $aside"
+      if ! mv "$link_path" "$aside"; then
+        # Linking now would put the link inside the directory and look like success.
+        log "FAILED to move aside, not linked: $link_path"
+        failed=1
+        continue
+      fi
+    fi
     log "link: $dotfiles_root/$name -> $origin_dir"
-    ln -fnsv "$dotfiles_root/$name" "$origin_dir"
+    if ! ln -fnsv "$dotfiles_root/$name" "$origin_dir"; then
+      log "FAILED to link: $dotfiles_root/$name -> $origin_dir"
+      failed=1
+    fi
     printf "\n"
   done
+  return $failed
 }
 
 main "$@"
