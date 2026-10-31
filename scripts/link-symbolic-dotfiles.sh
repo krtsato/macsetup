@@ -77,7 +77,12 @@ link_dotfiles() {
     if [[ -d "$link_path" && ! -L "$link_path" ]]; then
       aside="${link_path}.bak-$(date +%Y%m%d-%H%M%S)"
       log "move aside existing directory: $link_path -> $aside"
-      mv "$link_path" "$aside"
+      if ! mv "$link_path" "$aside"; then
+        # Linking now would put the link inside the directory and look like success.
+        log "FAILED to move aside, not linked: $link_path"
+        failed=1
+        continue
+      fi
     fi
     log "link: $dotfiles_root/$name -> $origin_dir"
     if ! ln -fnsv "$dotfiles_root/$name" "$origin_dir"; then
