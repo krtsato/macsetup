@@ -45,7 +45,6 @@ link_dotfiles() {
     [.gitconfig]=~/.gitconfig
     [.gitconfig.awa]=~/.gitconfig.awa
     [.gitignore.global]=~/.gitignore.global
-    [.mcp.json]=~/.mcp.json
     [.npmrc]=~/.npmrc
     [.textlintrc.json]=~/.textlintrc.json
     [.vscode_extensions_list]=~/.vscode/.vscode_extensions_list
