@@ -255,7 +255,7 @@ make doctor PHASE=cutover
 | 足りない物 | やること |
 | --- | --- |
 | `codex` | `codex login` |
-| NotebookLM | 持ち込みで入るのが普通。足りなければ `nlm login --profile "$(gh variable get NOTEBOOKLM_PROFILE -R krtsato/mcp-note)"`（プロファイル名はアカウントの識別子に近いので、画面や記録に残さない） |
+| NotebookLM | 持ち込みで入るのが普通。足りなければ krtsato/mcp-notebooklm の `notebooklm login --profile "$(gh variable get NOTEBOOKLM_PROFILE -R krtsato/mcp-note)"`（手順は同リポの docs/operations.md「入り直し」。素の `nlm login` は夜間実行が使わない置き場所に書くので効かない）（プロファイル名はアカウントの識別子に近いので、画面や記録に残さない） |
 | OpenD（moomoo の API ゲートウェイ） | OpenD を起動してログイン、二段階認証 |
 
 成功の見え方: 失敗が 0 件です。

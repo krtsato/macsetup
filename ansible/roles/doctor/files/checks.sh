@@ -324,10 +324,13 @@ group_logins() {
   if [ "${#PROFILES[@]}" -gt 0 ]; then
     for p in "${PROFILES[@]}"; do
       i=$((i + 1))
-      if [ -x "${nlm}" ] && NOTEBOOKLM_MCP_CLI_PATH="${nlm_dir}" "${nlm}" login --check --profile "${p}" >/dev/null 2>&1; then
+      # login --check は期限切れでも 0 を返す。実際に一覧を取り、JSON の配列が返ったときだけ
+      # ログイン済みとみなす（krtsato/mcp-notebooklm の notebooklm auth-check と同じ判定）
+      # 本体は pipefail を使わないので、nlm の失敗を jq の成功で覆わないようここだけ有効にする
+      if [ -x "${nlm}" ] && (set -o pipefail; env -u NOTEBOOKLM_COOKIES NOTEBOOKLM_MCP_CLI_PATH="${nlm_dir}" "${nlm}" notebook list --json --profile "${p}" 2>/dev/null | jq -e 'type == "array"' >/dev/null 2>&1); then
         [ "${phase}" != pre-import ] || warn "NotebookLM(プロファイル${i}): 衝突（持ち込み前なのにログイン済み）"
       else
-        [ "${phase}" = pre-import ] || fail "NotebookLM(プロファイル${i}): ログインしていない・確認できない（nlm login --check）"
+        [ "${phase}" = pre-import ] || fail "NotebookLM(プロファイル${i}): ログインしていない・確認できない（nlm notebook list）"
       fi
     done
   fi
