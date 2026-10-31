@@ -18,3 +18,12 @@
   ansible.builtin.set_fact:
     doctor_failures: "{{ doctor_failures + (doctor_result.stdout_lines | select('match', '^FAIL\\|') | map('regex_replace', '^FAIL\\|', '') | list) }}"
     doctor_warnings: "{{ doctor_warnings + (doctor_result.stdout_lines | select('match', '^WARN\\|') | map('regex_replace', '^WARN\\|', '') | list) }}"
+
+# checks.sh は FAIL|・WARN| の行だけを出す。それ以外の空でない行は、点検の途中で
+# 想定外の出力が混じった合図なので、黙って捨てずに件数を警告へ足す。
+- name: "Warn about unrecognised output of {{ doctor_group }}"
+  ansible.builtin.set_fact:
+    doctor_warnings: "{{ doctor_warnings + ['点検 ' ~ doctor_group ~ ': 結果として集められなかった出力が ' ~ _doctor_unrecognised | length ~ ' 行ある'] }}"
+  vars:
+    _doctor_unrecognised: "{{ doctor_result.stdout_lines | select('match', '\\S') | reject('match', '^(FAIL|WARN)\\|') | list }}"
+  when: _doctor_unrecognised | length > 0
