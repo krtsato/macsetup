@@ -71,6 +71,7 @@ Homebrew でインストールするパッケージ一覧。
 - poppler
 - pup
 - redis
+- ripgrep
 - ruby
 - starship
 - uv
