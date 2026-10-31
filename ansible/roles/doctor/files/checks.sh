@@ -385,7 +385,7 @@ group_github() {
 # pre-import/cutover は登録済み・停止中、ready は GitHub 上で online かつラベル一致。
 # ---------------------------------------------------------------------------------
 group_runners() {
-  local repo label dir rdir name plist first sc plabel state svc_file shims agent
+  local repo label dir rdir name plist first sc plabel state svc_file shims agent rc entry missing
   shims="${home}/$(jin -r '.mise_shims')"
   while IFS=$'\t' read -r repo label dir; do
     name="${repo}/${label}"
@@ -406,6 +406,13 @@ group_runners() {
     if [ "${first}" != "${shims}" ]; then
       fail "runner ${name}: .path の先頭が mise の shims でない（${first:-空}）"
     fi
+    # .path に存在しないフォルダが混じると、そこから先の道具が黙って見つからなくなる
+    missing=""
+    while IFS= read -r entry || [ -n "${entry}" ]; do
+      [ -n "${entry}" ] || continue
+      [ -d "${entry}" ] || missing="${missing:+${missing}, }${entry}"
+    done < <(tr ':' '\n' <"${rdir}/.path" 2>/dev/null)
+    [ -z "${missing}" ] || warn "runner ${name}: .path に存在しないフォルダがある（${missing}）"
 
     svc_file="${rdir}/.service"
     plist=""
@@ -424,8 +431,11 @@ group_runners() {
     if [ "${phase}" = ready ]; then
       state="$(gh api "repos/krtsato/${repo}/actions/runners" --paginate \
         --jq ".runners[] | select(.name == \"${agent}\") | [.status, ([.labels[].name] | join(\",\"))] | @tsv" 2>/dev/null)"
-      if [ -z "${state}" ]; then
-        fail "runner ${name}: GitHub に ${agent} が見つからない・一覧を読めない"
+      rc=$?
+      if [ "${rc}" -ne 0 ]; then
+        fail "runner ${name}: GitHub の runner 一覧を読めない（gh api が終了コード ${rc}。認証切れ・通信を確認）"
+      elif [ -z "${state}" ]; then
+        fail "runner ${name}: GitHub の一覧に ${agent} が無い"
       else
         case "${state%%$'\t'*}" in online) ;; *) fail "runner ${name}: GitHub 上で online でない（${state%%$'\t'*}）" ;; esac
         case ",${state#*$'\t'}," in *",${label},"*) ;; *) fail "runner ${name}: ラベル ${label} が一致しない" ;; esac

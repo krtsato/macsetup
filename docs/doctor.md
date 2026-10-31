@@ -27,7 +27,7 @@
 | 道具 | `nlm`（固定版）・`docker info`・Docker の host networking・`claude`・`codex`・`gh` |
 | ログイン | `gh`・管理者権限・`codex`・`claude`・NotebookLM（終了コードだけを見る）。`gh`・`claude`・`codex` は runner と同じ環境（`env -i` と runner の `.path`）でも 1 回確かめる |
 | GitHub 側 | 移行に必須の秘密と変数（名前の有無だけ。全設定の棚卸しではない。秘密 6 組は「移行に必須の組」） |
-| runner と夜間の起動 | `.path` の先頭が mise の shims・`SessionCreate=false`・停止/online・LaunchAgent の読み込み |
+| runner と夜間の起動 | `.path` の先頭が mise の shims と、存在しないフォルダの有無（有れば警告）・`SessionCreate=false`・停止/online・LaunchAgent の読み込み。GitHub の一覧を読めない失敗と「一覧に無い」失敗は別の文言 |
 | OpenD（moomoo の API ゲートウェイ） | `127.0.0.1:11111`。`ready` では土曜 01:30〜月曜 01:30 以外は失敗、その間と他の PHASE では警告（日本時間。`DOCTOR_NOW` / `doctor_now` で「いま」を上書きできる） |
 
 ## PHASE ごとの期待
