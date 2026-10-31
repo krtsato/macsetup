@@ -41,7 +41,6 @@ link_dotfiles() {
     [.claude/]=~/
     [.codex/]=~/
     [.kiro/]=~/
-    [.claude.json]=~/.claude.json
     [.gitconfig]=~/.gitconfig
     [.gitconfig.awa]=~/.gitconfig.awa
     [.gitignore.global]=~/.gitignore.global
