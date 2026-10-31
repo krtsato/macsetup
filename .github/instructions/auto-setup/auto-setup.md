@@ -103,6 +103,7 @@ Homebrew でインストールするパッケージ一覧。
 - font-ricty-diminished
 - gcloud-cli
 - google-japanese-ime
+- herdr-app
 - imageoptim
 - karabiner-elements
 - kiro-cli
