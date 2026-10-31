@@ -25,5 +25,5 @@
   ansible.builtin.set_fact:
     doctor_warnings: "{{ doctor_warnings + ['点検 ' ~ doctor_group ~ ': 結果として集められなかった出力が ' ~ _doctor_unrecognised | length ~ ' 行ある'] }}"
   vars:
-    _doctor_unrecognised: "{{ doctor_result.stdout_lines | select('match', '\\S') | reject('match', '^(FAIL|WARN)\\|') | list }}"
+    _doctor_unrecognised: "{{ doctor_result.stdout_lines | select('search', '\\S') | reject('match', '^(FAIL|WARN)\\|') | list }}"
   when: _doctor_unrecognised | length > 0

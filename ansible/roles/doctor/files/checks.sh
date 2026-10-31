@@ -408,7 +408,7 @@ group_runners() {
     fi
     # .path に存在しないフォルダが混じると、そこから先の道具が黙って見つからなくなる
     missing=""
-    while IFS= read -r entry; do
+    while IFS= read -r entry || [ -n "${entry}" ]; do
       [ -n "${entry}" ] || continue
       [ -d "${entry}" ] || missing="${missing:+${missing}, }${entry}"
     done < <(tr ':' '\n' <"${rdir}/.path" 2>/dev/null)
