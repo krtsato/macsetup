@@ -29,6 +29,7 @@ formulas:
   - poppler
   - pup
   - redis
+  - ripgrep
   - ruby
   - starship
   - uv
