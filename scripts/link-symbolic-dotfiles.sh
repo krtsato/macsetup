@@ -51,6 +51,7 @@ link_dotfiles() {
     [.zcompdump]=~/.zcompdump
     [.zprofile]=~/.zprofile
     [.zshrc]=~/.zshrc
+    [herdr-app/settings.json]=~/.config/herdr-app/settings.json
     [karabiner/]=~/.config/
     [mise/]=~/.config/
     [settings.json]=~/Library/Application\ Support/Code/User/settings.json
