@@ -30,7 +30,6 @@ formulas:
   - pup
   - redis
   - ripgrep
-  - ruby
   - starship
   - uv
   - watch
