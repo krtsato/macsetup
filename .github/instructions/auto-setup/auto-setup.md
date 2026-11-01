@@ -72,7 +72,6 @@ Homebrew でインストールするパッケージ一覧。
 - pup
 - redis
 - ripgrep
-- ruby
 - starship
 - uv
 - watch
