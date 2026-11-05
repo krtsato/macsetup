@@ -59,10 +59,11 @@ npx markdownlint-cli2 --config ~/dev/me/dotfiles/.markdownlint.yaml <file>
 | 8 | `uv_tools` | `uv tool install` で版を固定した道具（NotebookLM の `nlm`） |
 | 9 | `go` | `go install` でバイナリ |
 | 10 | `npm` | `npm install -g` でグローバルパッケージ（textlint など） |
-| 11 | `vscode` | `install-vscode-extensions.sh` で拡張機能 |
-| 12 | `runners` | 自前の runner（GitHub Actions の self-hosted runner）5 体を登録し、常駐の設定（plist）まで作る。**起動は `runners_enabled=true` のときだけ**（既定は停止。動いているものは決して止めない） |
-| 13 | `nightly_launcher` | `krtsato/watcher` を取得し、その `plan.json` の枠ごとに LaunchAgent を生成・登録。**読み込むのは `nightly_launcher_enabled=true` か、既に読み込み済みの枠だけ** |
-| 14 | `moomoo` | OpenD（moomoo の API ゲートウェイ）のログ掃除 LaunchAgent を入れ、SDK のコンテナ image が無ければ作る。OpenD 本体は手で入れる |
+| 11 | `agent_skills` | `npx skills add -g` で他人が配布する agent skill（Herdr の `herdr`）。本体は `~/.agents/skills/` |
+| 12 | `vscode` | `install-vscode-extensions.sh` で拡張機能 |
+| 13 | `runners` | 自前の runner（GitHub Actions の self-hosted runner）5 体を登録し、常駐の設定（plist）まで作る。**起動は `runners_enabled=true` のときだけ**（既定は停止。動いているものは決して止めない） |
+| 14 | `nightly_launcher` | `krtsato/watcher` を取得し、その `plan.json` の枠ごとに LaunchAgent を生成・登録。**読み込むのは `nightly_launcher_enabled=true` か、既に読み込み済みの枠だけ** |
+| 15 | `moomoo` | OpenD（moomoo の API ゲートウェイ）のログ掃除 LaunchAgent を入れ、SDK のコンテナ image が無ければ作る。OpenD 本体は手で入れる |
 
 `exec.yaml` に入らないロール: `doctor`（`ansible/doctor.yaml`）・`secrets`（`ansible/secrets.yaml`）。
 
@@ -74,6 +75,7 @@ npx markdownlint-cli2 --config ~/dev/me/dotfiles/.markdownlint.yaml <file>
 | `runners` | `gh` の認証（5）と複製（6）・mise（7）の後 |
 | `nightly_launcher` | `gh` の認証（5）と `go`（9） |
 | `moomoo` | trade-moomoo の複製（6） |
+| `agent_skills` | dotfiles のリンク（4。`~/.claude` が実体のディレクトリだとリンクを張れない）と mise の node（7） |
 
 ## 壊してはいけない決まり
 
@@ -246,7 +248,7 @@ macsetup/
 │   ├── doctor.yaml             # 点検プレイブック（読むだけ）
 │   ├── secrets.yaml            # 秘密と記録の持ち出し・持ち込み
 │   ├── hosts                   # localhost のみ
-│   └── roles/                  # 16 ロール
+│   └── roles/                  # 17 ロール
 │       ├── dotfiles_repo/      # dotfiles の clone/pull + hooks 設定
 │       ├── homebrew/           # Brewfile によるパッケージ管理
 │       ├── macos/              # macOS システム設定
@@ -257,6 +259,7 @@ macsetup/
 │       ├── uv_tools/           # 版を固定した uv の道具（nlm）
 │       ├── go/                 # Go バイナリ
 │       ├── npm/                # グローバルパッケージ
+│       ├── agent_skills/       # 他人が配布する agent skill（herdr）
 │       ├── vscode/             # VSCode 拡張機能
 │       ├── runners/            # 自前の runner の登録と常駐設定（起動は切り替えの時だけ）
 │       ├── nightly_launcher/   # 夜間の起動の LaunchAgent

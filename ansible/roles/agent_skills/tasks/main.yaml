@@ -1,0 +1,21 @@
+# 入っていないものだけ入れる。版は固定しない（配布元が正本。上げるときは `npx skills update -g`）。
+# npx の node は mise 管理のため、mise ロールの後に実行する。リンクを dotfiles の中へ作るので、
+# dotfiles ロールの後でもある（先に走ると ~/.claude が実体のディレクトリになり、リンクを張れなくなる）。
+- name: Install agent skills
+  ansible.builtin.shell: |
+    set -eu
+    export PATH="$HOME/.local/share/mise/shims:/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin"
+    if [ -f "$HOME/.agents/skills/{{ item.skill }}/SKILL.md" ]; then
+      echo "already installed"
+      exit 0
+    fi
+    npx -y skills add "{{ item.source }}" --skill "{{ item.skill }}" -g -y
+    echo "installed"
+  args:
+    executable: /bin/bash
+  loop: "{{ agent_skills_packages }}"
+  loop_control:
+    label: "{{ item.source }} --skill {{ item.skill }}"
+  register: agent_skills_result
+  changed_when: "'installed' in agent_skills_result.stdout_lines"
+  failed_when: agent_skills_result.rc != 0

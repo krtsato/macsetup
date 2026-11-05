@@ -191,10 +191,11 @@ make setup \
 | 8 | `uv_tools` | `uv tool install` で版を固定した道具を入れる（NotebookLM の `nlm` 0.9.6。版は `roles/uv_tools/defaults`） |
 | 9 | `go` | Go ツールを `go install`（mise shims を PATH に含めて実行） |
 | 10 | `npm` | npm グローバルパッケージを `npm install -g`（mise shims を PATH に含めて実行）。textlint は Homebrew に formula がないため npm で導入する |
-| 11 | `vscode` | `./scripts/install-vscode-extensions.sh` |
-| 12 | `runners` | 自前の runner（GitHub Actions の self-hosted runner）5 体を登録し、常駐の設定（plist）まで作る。起動は `runners_enabled=true` のときだけ（既定は停止） |
-| 13 | `nightly_launcher` | `krtsato/watcher` を取得し、その `plan.json` の枠ごとに LaunchAgent を生成して登録。読み込むのは `nightly_launcher_enabled=true` か、既に読み込み済みの枠だけ |
-| 14 | `moomoo` | trade-moomoo の定義から OpenD（moomoo の API ゲートウェイ）のログ掃除 LaunchAgent を入れ、SDK のコンテナ image `moomoo-sdk:latest` が無ければ作る（Docker Desktop が動いていなければ知らせて先へ進む） |
+| 11 | `agent_skills` | 他人が配布する agent skill を `npx skills add <配布元> --skill <名前> -g` で入れる（Herdr の `herdr`）。入っていないものだけ。一覧は `roles/agent_skills/defaults` |
+| 12 | `vscode` | `./scripts/install-vscode-extensions.sh` |
+| 13 | `runners` | 自前の runner（GitHub Actions の self-hosted runner）5 体を登録し、常駐の設定（plist）まで作る。起動は `runners_enabled=true` のときだけ（既定は停止） |
+| 14 | `nightly_launcher` | `krtsato/watcher` を取得し、その `plan.json` の枠ごとに LaunchAgent を生成して登録。読み込むのは `nightly_launcher_enabled=true` か、既に読み込み済みの枠だけ |
+| 15 | `moomoo` | trade-moomoo の定義から OpenD（moomoo の API ゲートウェイ）のログ掃除 LaunchAgent を入れ、SDK のコンテナ image `moomoo-sdk:latest` が無ければ作る（Docker Desktop が動いていなければ知らせて先へ進む） |
 
 別の命令で動くロール（`make playbook` には入りません）:
 
