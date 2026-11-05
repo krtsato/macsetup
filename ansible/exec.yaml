@@ -12,6 +12,7 @@
     - uv_tools
     - go
     - npm
+    - agent_skills
     - vscode
     - runners
     - nightly_launcher
