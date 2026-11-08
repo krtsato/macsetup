@@ -1,6 +1,6 @@
 # 他人が配布する agent skill。`npx skills add <source> --skill <skill> -g` で入れる。
-# 本体は ~/.agents/skills/<skill> に置かれ、Claude Code と Kiro には ~/.claude/skills・~/.kiro/skills
-# からのリンクが作られる。どちらも dotfiles の中なので、足したら dotfiles 側も揃える
+# 本体は ~/.agents/skills/<skill> に置かれ、Claude Code には ~/.claude/skills からのリンクが作られる。
+# そこは dotfiles の中なので、足したら dotfiles 側も揃える
 # （.claude/.gitignore に skills/<skill> を足し、.codex/skills/<skill> を ../../.claude/skills/<skill> へのリンクで追跡する）。
 # 自作の skill はここに書かない（dotfiles の .claude/skills/ で管理する）。
 agent_skills_packages:
