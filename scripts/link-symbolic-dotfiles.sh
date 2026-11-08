@@ -40,7 +40,6 @@ link_dotfiles() {
     [brewfile.me]="$brewfile_path"
     [.claude/]=~/
     [.codex/]=~/
-    [.kiro/]=~/
     [.gitconfig]=~/.gitconfig
     [.gitconfig.awa]=~/.gitconfig.awa
     [.gitignore.global]=~/.gitignore.global
@@ -49,7 +48,6 @@ link_dotfiles() {
     [.vscode_extensions_list]=~/.vscode/.vscode_extensions_list
     [.vscode_extensions_list_insiders]=~/.vscode-insiders/.vscode_extensions_list_insiders
     [.zcompdump]=~/.zcompdump
-    [.zprofile]=~/.zprofile
     [.zshrc]=~/.zshrc
     [herdr-app/]=~/.config/
     [karabiner/]=~/.config/

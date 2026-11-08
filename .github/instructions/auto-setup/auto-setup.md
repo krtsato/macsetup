@@ -106,7 +106,6 @@ Homebrew でインストールするパッケージ一覧。
 - herdr-app
 - imageoptim
 - karabiner-elements
-- kiro-cli
 - loopback
 - ngrok
 - notion
