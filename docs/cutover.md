@@ -41,7 +41,7 @@
 | 9 | 旧い Mac で `make secrets-export` → 新しい Mac で `make secrets-import` | 人＋自動 |
 | 10 | 新しい Mac で `make doctor PHASE=cutover`。**足りない物だけ**ログインし直す | 人 |
 | 11 | 新しい Mac の runner を起動し、online・ラベル・PATH・`SessionCreate=false` を確認する | 自動 |
-| 12 | 新しい Mac の夜間の起動を起動し、`make doctor`（`PHASE=ready`。既定）を通す | 自動 |
+| 12 | 新しい Mac の夜間の起動を起動し、バックグラウンドでの実行を許可し、再起動しても読み込まれることと `make doctor`（`PHASE=ready`。既定）を確かめる | 人＋自動 |
 | 13 | 試し実行（`make cutover-trial` が出す、副作用のないものだけ）を起動する | 自動 |
 | 14 | 完了の一覧（確認対象 21 件）が新しい Mac で成功したら、旧い Mac の runner の登録を GitHub から消す | 人 |
 
@@ -308,9 +308,31 @@ make doctor
 - runner がすでに動いていれば触りません（冪等）
 - `make doctor`（`PHASE=ready`。既定）は、runner が online・夜間の起動が読み込み済み・OpenD が開いている、を期待します
 
-成功の見え方: 失敗が 0 件です。
+続けて、**再起動しても読み込まれるよう許可を出します。** システム設定 → 一般 → ログイン項目と機能拡張 の
+「バックグラウンドでの実行を許可」で、次の 2 つをオンにします。一覧には `ProgramArguments` の先頭の名前で並びます。
 
-失敗したら: OpenD は**日本時間の土曜 01:30〜月曜 01:30 以外**で閉じていると失敗します。OpenD を起動してログインします。
+| 一覧での名前 | 中身 |
+| --- | --- |
+| `caffeinate` | 夜間の起動 2 本（枠 A・B） |
+| `bash` | OpenD のログ掃除 `com.krtsato.opend-log-cleanup` |
+
+**オフのままだと、手で読み込んだ今は動くのに、再起動すると読み込まれません。** `make doctor` は
+「今読み込まれているか」しか見ないので、この時点では通ってしまいます。旧い Mac では 2026-10-20・10-26・11-07 の
+3 回、再起動の後に夜間の起動が抜けました（watcher の `docs/launcher.md`）。
+
+許可した後に 1 回再起動し、3 つとも読み込まれていることを確かめます。
+
+```sh
+launchctl list | grep -E 'nightly-launcher|opend-log-cleanup'   # 3 行出ればよい
+make doctor
+```
+
+成功の見え方: 再起動の後に 3 行出て、`make doctor` の失敗が 0 件です。
+
+失敗したら: 行が欠けていれば、上の許可がオフです。オンにしてから
+`launchctl bootstrap gui/$(id -u) ~/Library/LaunchAgents/<label>.plist` で読み込み直します。
+手で読み込んだだけでは許可が効いた証拠にならないので、**もう一度再起動して**同じ確認を通します。
+OpenD は**日本時間の土曜 01:30〜月曜 01:30 以外**で閉じていると失敗します。OpenD を起動してログインします。
 
 ### 手順 13 — 試し実行
 
