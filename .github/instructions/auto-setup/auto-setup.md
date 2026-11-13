@@ -115,8 +115,6 @@ Homebrew でインストールするパッケージ一覧。
 - raycast
 - slack
 - tradingview
-- tunnelbear
-- tunnelblick
 - visual-studio-code
 - visual-studio-code@insiders
 
