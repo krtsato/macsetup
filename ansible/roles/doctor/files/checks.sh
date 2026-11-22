@@ -385,7 +385,7 @@ group_github() {
 # pre-import/cutover は登録済み・停止中、ready は GitHub 上で online かつラベル一致。
 # ---------------------------------------------------------------------------------
 group_runners() {
-  local repo label dir rdir name plist first sc plabel state svc_file shims agent rc entry missing
+  local repo label dir rdir name plist first sc ka ti props plabel state svc_file shims agent rc entry missing
   shims="${home}/$(jin -r '.mise_shims')"
   while IFS=$'\t' read -r repo label dir; do
     name="${repo}/${label}"
@@ -444,6 +444,14 @@ group_runners() {
       else
         case "${state%%$'\t'*}" in online) ;; *) fail "runner ${name}: GitHub 上で online でない（${state%%$'\t'*}）" ;; esac
         case ",${state#*$'\t'}," in *",${label},"*) ;; *) fail "runner ${name}: ラベル ${label} が一致しない" ;; esac
+      fi
+      # plist を直しても読み込み直すまでは古い設定で動く。読み込み済みの側に keepalive があるかを見る
+      if [ -n "${plabel}" ]; then
+        props="$(launchctl print "gui/$(id -u)/${plabel}" 2>/dev/null | sed -n 's/^\tproperties = //p')"
+        case " ${props} " in
+          *" keepalive "*) ;;
+          *) fail "runner ${name}: 読み込み済みの設定に KeepAlive が効いていない（job の無い時に launchctl bootout → bootstrap で読み込み直す）" ;;
+        esac
       fi
     elif [ -n "${plabel}" ]; then
       if launchctl print "gui/$(id -u)/${plabel}" 2>/dev/null | grep -Eq 'state = running|pid = [0-9]+'; then
