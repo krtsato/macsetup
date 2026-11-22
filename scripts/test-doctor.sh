@@ -79,6 +79,14 @@ rc=0
 run_doctor "${tmp}/c.out" -e "doctor_launchagents_dir=${tmp}/LaunchAgents" || rc=$?
 expect_broken "SessionCreate=true plist" "${tmp}/c.out" "${rc}" "runner mcp-mediable/mediable-sync: plist の SessionCreate が false でない"
 
+# (c2) KeepAlive を消した plist の写し（長い通信断の後に runner が戻らない形）
+log "(c2) KeepAlive の無い plist"
+plutil -replace SessionCreate -bool false "${plist}"
+plutil -remove KeepAlive "${plist}" 2>/dev/null || true
+rc=0
+run_doctor "${tmp}/c2.out" -e "doctor_launchagents_dir=${tmp}/LaunchAgents" || rc=$?
+expect_broken "plist without KeepAlive" "${tmp}/c2.out" "${rc}" "runner mcp-mediable/mediable-sync: plist の KeepAlive が true でない"
+
 # (e) NOTEBOOKLM_PROFILE を読めないリポジトリ（存在しないリポジトリ）
 log "(e) NOTEBOOKLM_PROFILE を読めない"
 rc=0

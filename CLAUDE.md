@@ -135,7 +135,7 @@ make playbook EXTRA_VARS='runners_enabled=true nightly_launcher_enabled=true'
 | 取得 | `runners_version`（既定 `latest`、`2.338.0` のように固定も可）の配布物を `gh api` で取り、リリース本文の SHA-256 と照合。一致しない・無いときは展開せず失敗。固定しても自動更新は有効 |
 | 途中の跡 | `.runner` が無いのに置き場が空でないときは、検証していない `config.sh` へ鍵を渡さないよう失敗する（消すのは人） |
 | 冪等 | `.runner` がある（登録済み）なら取得も登録もしない。この Mac で流しても既存の runner は止まらない |
-| 雛形 | 実体のある `bin*/actions.runner.plist.template` を `SessionCreate=false` に直す。自動更新で増える `bin.<版>` の雛形は true に戻るが、点検が見るのは常駐側の plist |
+| 雛形と plist | 実体のある `bin*/actions.runner.plist.template` と常駐側の plist を `SessionCreate=false`・`KeepAlive=true`・`ThrottleInterval=60` に直す（`files/patch-plist.sh`）。`KeepAlive` が無いと、長い通信断で session が失効した runner は 0 で終了し、launchd が起こし直さない（2026-11-21 に 2 体）。読み込み済みの plist を直しても読み込み直さない（実行中の job を殺すため）。自動更新で増える `bin.<版>` の雛形は元に戻るが、点検が見るのは常駐側の plist |
 | `.path` | 先頭を mise の shims にする（無ければ作り、あれば残りを保って先頭に足す）。`.env` は触らない |
 | 起動 | `runners_enabled` が真のときだけ `launchctl bootstrap` し、今回起動したものは GitHub 上で online になるまで待つ（`runners_online_timeout` 既定 120 秒・`runners_online_interval` 既定 5 秒。来なければ名前つきで失敗）。偽のときは何もしない |
 | 夜間の起動 | plist は常に作る。読み込むのは `nightly_launcher_enabled` が真か、その枠が既に読み込み済みのとき（この Mac は `plan.json` の変更後に読み直す動きを保つ） |
@@ -166,7 +166,7 @@ make playbook EXTRA_VARS='runners_enabled=true nightly_launcher_enabled=true'
 | 点検の本体 | `ansible/roles/doctor/files/checks.sh`（グループごとに `FAIL\|`・`WARN\|` の行を出し、Ansible が溜めて最後に一覧と失敗にする） |
 | PHASE | `doctor_phase` = `pre-import` / `cutover` / `ready`（既定 `ready`、不正値は即失敗） |
 | テスト用の差し込み | `doctor_home`・`doctor_launchagents_dir`・`doctor_extra_config_files`・`doctor_clone_dir_overrides` |
-| 壊して確かめる | `scripts/test-doctor.sh`（欠けた必須ファイル・存在しない複製・`SessionCreate=true` の plist を名指しで検出するか） |
+| 壊して確かめる | `scripts/test-doctor.sh`（欠けた必須ファイル・存在しない複製・`SessionCreate=true` と `KeepAlive` の無い plist を名指しで検出するか） |
 
 - **公開リポジトリなので**秘密の値・NotebookLM のプロファイル名を書かない。プロファイル名と複製の場所は GitHub の変数から実行時に読む
 - 入口ファイルの一覧は、ワークフローの `$X_CLONE_DIR/...`・`git archive origin/main`・`git show` の使い方から導出する。呼び出し先が動いたらここも直す

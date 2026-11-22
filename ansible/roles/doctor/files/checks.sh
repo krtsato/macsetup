@@ -381,7 +381,7 @@ group_github() {
 }
 
 # ---------------------------------------------------------------------------------
-# runners: self-hosted runner。全 PHASEで .path の先頭が mise の shims・plist が SessionCreate=false。
+# runners: self-hosted runner。全 PHASEで .path の先頭が mise の shims・plist が SessionCreate=false・KeepAlive=true・ThrottleInterval=60。
 # pre-import/cutover は登録済み・停止中、ready は GitHub 上で online かつラベル一致。
 # ---------------------------------------------------------------------------------
 group_runners() {
@@ -425,6 +425,11 @@ group_runners() {
     else
       sc="$(plutil -extract SessionCreate raw "${plist}" 2>/dev/null)"
       [ "${sc}" = false ] || fail "runner ${name}: plist の SessionCreate が false でない（${sc:-未設定}）"
+      # 長く通信が切れると listener は「再試行不要」で 0 終了する。KeepAlive が無いと launchd は起こし直さない
+      ka="$(plutil -extract KeepAlive raw "${plist}" 2>/dev/null)"
+      [ "${ka}" = true ] || fail "runner ${name}: plist の KeepAlive が true でない（${ka:-未設定}）"
+      ti="$(plutil -extract ThrottleInterval raw "${plist}" 2>/dev/null)"
+      [ "${ti}" = 60 ] || fail "runner ${name}: plist の ThrottleInterval が 60 でない（${ti:-未設定}）"
       plabel="$(basename "${plist}" .plist)"
     fi
 

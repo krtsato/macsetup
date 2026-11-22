@@ -1,10 +1,10 @@
 #!/usr/bin/env bash
 # runners 役割の検査。偽の gh・launchctl・config.sh・svc.sh を一時ディレクトリに置き、本物の登録鍵や
 # 本物の runner には一切触れずに確かめる。
-# (a) 新規: 登録の引数・雛形と plist が SessionCreate=false・.path の先頭が shims・無効なら起動しない・鍵が出力に出ない
+# (a) 新規: 登録の引数・雛形と plist が SessionCreate=false・KeepAlive=true・.path の先頭が shims・無効なら起動しない・鍵が出力に出ない
 # (b) SHA-256 の不一致（と hash の欠落）は失敗し、展開しない
 # (c) runners_enabled=true で起動は 1 回だけ（2 回目は呼ばない）
-# (d) 登録済み（.runner あり）はダウンロードも登録もしない
+# (d) 登録済み（.runner あり）はダウンロードも登録もしない (d2) KeepAlive の無い古い plist は直すが読み込み直さない
 # (e) .runner が無く置き場が空でないなら失敗 (f)(g) 起動後に online を待つ (h) 版の固定
 set -euo pipefail
 cd "$(dirname "$0")/.."
@@ -131,6 +131,7 @@ assert() { # assert <名前> <条件を表すコマンド...>
   if "$@"; then ok "${name}"; else ng "${name}"; fi
 }
 session() { plutil -extract SessionCreate raw -o - "$1"; }
+val() { plutil -extract "$2" raw -o - "$1" 2>/dev/null || true; } # val <plist> <key>
 count() { grep -c -- "$1" "$2" || true; }
 
 # (a) 新規・無効
@@ -144,6 +145,9 @@ no_token() { [ -n "${out}" ] && ! grep -q -- "${token}" <<<"${out}"; }
 assert "(a) 鍵が ansible の出力に出ない（-vvv）" no_token
 assert "(a) 雛形が SessionCreate=false" test "$(session "${dir}/bin/actions.runner.plist.template")" = false
 assert "(a) plist が SessionCreate=false" test "$(session "${plist}")" = false
+assert "(a) 雛形が KeepAlive=true" test "$(val "${dir}/bin/actions.runner.plist.template" KeepAlive)" = true
+assert "(a) plist が KeepAlive=true" test "$(val "${plist}" KeepAlive)" = true
+assert "(a) plist が ThrottleInterval=60" test "$(val "${plist}" ThrottleInterval)" = 60
 assert "(a) .path の先頭が shims" bash -c "[ \"\$(cut -d: -f1 '${dir}/.path')\" = '${tmp}/home/.local/share/mise/shims' ]"
 assert "(a) 無効なら起動しない" bash -c "! grep -q bootstrap '${fake}/launchctl-calls.log'"
 run home false; check "(a) 2 回目は何もしない" ok "changed=0"
@@ -165,7 +169,7 @@ assert "(c) bootstrap は 1 回" test "$(count bootstrap "${fake}/launchctl-call
 run hc true; check "(c) 2 回目は何もしない" ok "changed=0"
 assert "(c) 2 回目は bootstrap しない" test "$(count bootstrap "${fake}/launchctl-calls.log")" = 1
 
-# (d) 登録済み（この Mac の形）: 取得も登録もしない。雛形と .path だけ直す。既存の plist は書き換えない
+# (d) 登録済み（この Mac の形）: 取得も登録もしない。雛形と .path だけ直す。整った既存の plist は書き換えない
 reset hd; release "${good_body}"
 d="${tmp}/hd/runner"
 mkdir -p "${d}/bin" "${tmp}/hd/Library/LaunchAgents"
@@ -174,7 +178,10 @@ echo '{}' >"${d}/.runner"
 echo 'actions.runner.krtsato-runner.old-mac' >"${d}/.service"
 printf '#!/bin/bash\nSVC_NAME="actions.runner.krtsato-runner.old-mac"\necho svc-called >>./svc.log\n' >"${d}/svc.sh"
 chmod +x "${d}/svc.sh"
-sed 's/<true\/>/<false\/>/' "${src}/bin/actions.runner.plist.template" >"${tmp}/hd/Library/LaunchAgents/actions.runner.krtsato-runner.old-mac.plist"
+old="${tmp}/hd/Library/LaunchAgents/actions.runner.krtsato-runner.old-mac.plist"
+sed 's/<true\/>/<false\/>/' "${src}/bin/actions.runner.plist.template" >"${old}"
+plutil -replace KeepAlive -bool true "${old}"
+plutil -replace ThrottleInterval -integer 60 "${old}"
 before="$(shasum "${tmp}/hd/Library/LaunchAgents/actions.runner.krtsato-runner.old-mac.plist")"
 printf '/usr/bin:/bin' >"${d}/.path"
 run hd false; check "(d) 登録済みは成功" ok "failed=0"
@@ -184,6 +191,16 @@ assert "(d) 既存の plist はそのまま" test "$(shasum "${tmp}/hd/Library/L
 assert "(d) 雛形は false になる" test "$(session "${d}/bin/actions.runner.plist.template")" = false
 assert "(d) .path は残りを保って先頭に shims" test "$(cat "${d}/.path")" = "${tmp}/hd/.local/share/mise/shims:/usr/bin:/bin"
 run hd false; check "(d) 2 回目は何もしない" ok "changed=0"
+
+# (d2) 登録済みで KeepAlive が無い古い plist: その 3 つだけ直し、他の値は残し、読み込み直さない
+plutil -remove KeepAlive "${old}"
+plutil -remove ThrottleInterval "${old}"
+run hd false; check "(d2) 古い plist を直して成功" ok "failed=0"
+assert "(d2) KeepAlive=true になる" test "$(val "${old}" KeepAlive)" = true
+assert "(d2) ThrottleInterval=60 になる" test "$(val "${old}" ThrottleInterval)" = 60
+assert "(d2) 他の値は残る" test "$(val "${old}" Label)" = '{{SvcName}}'
+assert "(d2) 読み込み直さない" bash -c "! grep -q bootstrap '${fake}/launchctl-calls.log'"
+run hd false; check "(d2) 2 回目は何もしない" ok "changed=0"
 
 # (e) .runner が無いのに置き場が空でない（途中で止まった跡）: 検証せずに登録しない
 reset he; release "${good_body}"

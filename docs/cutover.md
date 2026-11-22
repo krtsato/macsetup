@@ -40,7 +40,7 @@
 | 8 | 旧い Mac の runner 5 体を止め、GitHub 上で offline を確認する | 人＋自動 |
 | 9 | 旧い Mac で `make secrets-export` → 新しい Mac で `make secrets-import` | 人＋自動 |
 | 10 | 新しい Mac で `make doctor PHASE=cutover`。**足りない物だけ**ログインし直す | 人 |
-| 11 | 新しい Mac の runner を起動し、online・ラベル・PATH・`SessionCreate=false` を確認する | 自動 |
+| 11 | 新しい Mac の runner を起動し、online・ラベル・PATH・`SessionCreate=false`・`KeepAlive=true` を確認する | 自動 |
 | 12 | 新しい Mac の夜間の起動を起動し、バックグラウンドでの実行を許可し、再起動しても読み込まれることと `make doctor`（`PHASE=ready`。既定）を確かめる | 人＋自動 |
 | 13 | 試し実行（`make cutover-trial` が出す、副作用のないものだけ）を起動する | 自動 |
 | 14 | 完了の一覧（確認対象 21 件）が新しい Mac で成功したら、旧い Mac の runner の登録を GitHub から消す | 人 |
@@ -283,7 +283,7 @@ for r in $REPOS; do
 done
 for p in ~/Library/LaunchAgents/actions.runner.*.plist; do
   case "$p" in *.bak) continue ;; esac
-  echo "$(basename "$p"): SessionCreate=$(plutil -extract SessionCreate raw "$p")"   # false であること
+  echo "$(basename "$p"): SessionCreate=$(plutil -extract SessionCreate raw "$p") KeepAlive=$(plutil -extract KeepAlive raw "$p")"   # false と true であること
 done
 ```
 
@@ -294,6 +294,7 @@ done
 | 状態 | 新しい Mac の 5 体が `online` |
 | ラベル | `self-hosted,macOS,ARM64` と用途のラベル |
 | `SessionCreate` | 5 体とも `false`（`true` だと Claude がキーチェーンを読めず、著述系が落ちる） |
+| `KeepAlive` | 5 体とも `true`（無いと、長い通信断の後に runner が 0 で終了したまま戻らない） |
 | `.path` | 先頭が mise の shims（`make doctor` が見る） |
 
 ### 手順 12 — 夜間の起動を起動し、稼働の点検を通す
