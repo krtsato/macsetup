@@ -381,11 +381,11 @@ group_github() {
 }
 
 # ---------------------------------------------------------------------------------
-# runners: self-hosted runner。全 PHASEで .path の先頭が mise の shims・plist が SessionCreate=false。
+# runners: self-hosted runner。全 PHASEで .path の先頭が mise の shims・plist が SessionCreate=false・KeepAlive=true・ThrottleInterval=60。
 # pre-import/cutover は登録済み・停止中、ready は GitHub 上で online かつラベル一致。
 # ---------------------------------------------------------------------------------
 group_runners() {
-  local repo label dir rdir name plist first sc plabel state svc_file shims agent rc entry missing
+  local repo label dir rdir name plist first sc ka ti props plabel state svc_file shims agent rc entry missing
   shims="${home}/$(jin -r '.mise_shims')"
   while IFS=$'\t' read -r repo label dir; do
     name="${repo}/${label}"
@@ -425,6 +425,11 @@ group_runners() {
     else
       sc="$(plutil -extract SessionCreate raw "${plist}" 2>/dev/null)"
       [ "${sc}" = false ] || fail "runner ${name}: plist の SessionCreate が false でない（${sc:-未設定}）"
+      # 長く通信が切れると listener は「再試行不要」で 0 終了する。KeepAlive が無いと launchd は起こし直さない
+      ka="$(plutil -extract KeepAlive raw "${plist}" 2>/dev/null)"
+      [ "${ka}" = true ] || fail "runner ${name}: plist の KeepAlive が true でない（${ka:-未設定}）"
+      ti="$(plutil -extract ThrottleInterval raw "${plist}" 2>/dev/null)"
+      [ "${ti}" = 60 ] || fail "runner ${name}: plist の ThrottleInterval が 60 でない（${ti:-未設定}）"
       plabel="$(basename "${plist}" .plist)"
     fi
 
@@ -439,6 +444,14 @@ group_runners() {
       else
         case "${state%%$'\t'*}" in online) ;; *) fail "runner ${name}: GitHub 上で online でない（${state%%$'\t'*}）" ;; esac
         case ",${state#*$'\t'}," in *",${label},"*) ;; *) fail "runner ${name}: ラベル ${label} が一致しない" ;; esac
+      fi
+      # plist を直しても読み込み直すまでは古い設定で動く。読み込み済みの側に keepalive があるかを見る
+      if [ -n "${plabel}" ]; then
+        props="$(launchctl print "gui/$(id -u)/${plabel}" 2>/dev/null | sed -n 's/^\tproperties = //p')"
+        case " ${props} " in
+          *" keepalive "*) ;;
+          *) fail "runner ${name}: 読み込み済みの設定に KeepAlive が効いていない（job の無い時に launchctl bootout → bootstrap で読み込み直す）" ;;
+        esac
       fi
     elif [ -n "${plabel}" ]; then
       if launchctl print "gui/$(id -u)/${plabel}" 2>/dev/null | grep -Eq 'state = running|pid = [0-9]+'; then

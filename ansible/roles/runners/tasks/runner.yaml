@@ -65,11 +65,16 @@
   failed_when: runners_register.rc != 0
   when: not runners_registered.stat.exists
 
-# svc.sh は雛形から plist を作り直すので、雛形も SessionCreate=false にしておく
-# （true だと Claude がキーチェーンを読めず落ちる）。実体のあるすべての bin* が対象（bin は版つき dir への symlink）。
-# 注意: runner の自動更新は新しい bin.<版> を作り、その雛形は true に戻る。点検が見るのは
+# svc.sh は雛形から plist を作り直すので、雛形も同じ 3 つの値にしておく。
+# - SessionCreate=false: true だと Claude がキーチェーンを読めず落ちる
+# - KeepAlive=true: 長く通信が切れると GitHub 側の session が失効し、listener は「再試行不要」で
+#   終了する。runsvc.sh は 0 で終わるので、これが無いと launchd は起こし直さず offline のまま残る
+#   （2026-11-21、5 体のうち 2 体がこれで止まった）
+# - ThrottleInterval=60: 登録が消えたときなどに、起動し直しを 60 秒に 1 回へ抑える
+# 実体のあるすべての bin* が対象（bin は版つき dir への symlink）。
+# 注意: runner の自動更新は新しい bin.<版> を作り、その雛形は元に戻る。点検が見るのは
 # 常駐側の plist なので、実害があるのは svc.sh install を再度流すときだけ。
-- name: Make runner service templates SessionCreate=false
+- name: Make runner service templates SessionCreate=false and KeepAlive=true
   ansible.builtin.shell: |
     set -euo pipefail
     cd "{{ runners_home }}/{{ runners_item.dir }}"
@@ -78,11 +83,9 @@
       [ -d "${d}" ] && [ ! -L "${d}" ] || continue
       f="${d}/actions.runner.plist.template"
       [ -f "${f}" ] || continue
-      cur="$(plutil -extract SessionCreate raw -o - "${f}" 2>/dev/null || true)"
-      if [ "${cur}" = "true" ]; then
-        plutil -replace SessionCreate -bool false "${f}"
-        patched=$((patched + 1))
-      fi
+      # Capture first: a failure inside `if [ "$(...)" ]` would escape set -e.
+      r="$("{{ role_path }}/files/patch-plist.sh" "${f}")"
+      [ "${r}" = ok ] || patched=$((patched + 1))
     done
     echo "patched=${patched}"
   args:
@@ -108,11 +111,10 @@
       out="installed"
     fi
     [ -f "${plist}" ] || { echo "${plist} ができていない" >&2; exit 1; }
-    cur="$(plutil -extract SessionCreate raw -o - "${plist}" 2>/dev/null || true)"
-    if [ "${cur}" = "true" ]; then
-      plutil -replace SessionCreate -bool false "${plist}"
-      out="${out} patched"
-    fi
+    # 読み込み済みの plist を書き換えても、効くのは次に読み込んだときから（ここでは読み込み直さない。
+    # 実行中の job を殺すため）
+    r="$("{{ role_path }}/files/patch-plist.sh" "${plist}")"
+    [ "${r}" = ok ] || out="${out} patched"
     echo "plist=${plist}"
     [ -z "${out}" ] || echo "${out# }"
   args:
