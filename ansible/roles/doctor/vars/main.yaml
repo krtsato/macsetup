@@ -82,6 +82,12 @@ doctor_config_files:
     mode: "0600"
     required: true
     purpose: "TradingView の cookie"
+  - path: ".config/mcp-applemusic/auth.json"
+    kind: "file"
+    class: "auth"
+    mode: "0600"
+    required: true
+    purpose: "Apple Music の media-user-token"
   - path: ".codex/auth.json"
     kind: "file"
     class: "auth"
@@ -119,6 +125,14 @@ doctor_config_files:
     mode: "0600"
     required: false
     purpose: "飛ばした動画の記録（無いことがある）"
+  # 無いと、結果の分からない作成・追加を守る記録が消え、同じ曲を二重に足しうる
+  - path: ".config/mcp-applemusic/state"
+    kind: "dir"
+    class: "state"
+    mode: "0700"
+    required: false
+    recursive: true
+    purpose: "Apple Music の書き込みの記録（プレイリストを作るまで無い）"
   # 受け箱と保留（ディレクトリごと。配下はファイル 0600）
   - path: ".config/mcp-mediable/notebooklm-inbox"
     kind: "dir"

@@ -45,8 +45,8 @@ scripts/test-secrets.sh                                     # 偽のホームで
 
 | 分類 | 運ぶ物 | 権限 |
 | --- | --- | --- |
-| `auth`（認証） | NotebookLM の cookie と `nlm` の認証・プロファイル、mediable・YouTube・TradingView の認証、`~/.codex/auth.json` | ファイル 0600・ディレクトリ 0700 |
-| `state`（処理済みの記録） | YouTube 送信済み・字幕同期・NotebookLM 同期・詰まった字幕・（あれば）飛ばした動画。無いと送信済みの動画を全件再送する | 0600 |
+| `auth`（認証） | NotebookLM の cookie と `nlm` の認証・プロファイル、mediable・YouTube・TradingView・Apple Music の認証、`~/.codex/auth.json` | ファイル 0600・ディレクトリ 0700 |
+| `state`（処理済みの記録） | YouTube 送信済み・字幕同期・NotebookLM 同期・詰まった字幕・（あれば）飛ばした動画と Apple Music の書き込みの記録。無いと送信済みの動画を全件再送し、結果の分からないプレイリストへの追加を守れない | 0600（Apple Music はディレクトリ 0700） |
 | `inbox`（受け箱と保留） | 各 `notebooklm-inbox/`・`withheld-drafts/` をディレクトリごと | 0700 配下、ファイル 0600 |
 
 `required: false` の項目は、あれば運びます。ディレクトリの中の `.DS_Store`・`.lock`・`*.lock` は運びません。
