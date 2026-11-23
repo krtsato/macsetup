@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # cutover-lib.sh・cutover-trial.sh・cutover-check.sh の検査。GitHub への書き込みも問い合わせ（gh）も無い
 # （(a)(b) は本物の複製を git fetch するだけ。(c)〜(e) は一時の git リポジトリと偽の gh）。
-# (a) 今の GitHub の main から作った完了の一覧が 確認対象 21 件（予定表 18 ＋ 夜間以外 3）で、その 3 つが想定どおり
+# (a) 今の GitHub の main から作った完了の一覧が 確認対象 25 件（予定表 22 ＋ 夜間以外 3）で、その 3 つが想定どおり
 # (b) 試し実行の一覧が想定どおり（含む・除く・入力値）。想定を直書きしているのは、定義が動いたときに気づくため
 # (c) 判定の論理を、偽の gh が返す固定の JSON で確かめる:
 #     完了 / 成功なし / 旧い Mac だけ / 曜日限定 / job の全ページ・runner_name が空 / 共有ワークフローは 1 晩で数える
@@ -30,16 +30,18 @@ log "(a) 完了の一覧の導出（この端末の複製を fetch した origin
 . scripts/cutover-lib.sh
 cutover_init
 real_units="$(cutover_units)"
-expect_eq "完了の一覧は 確認対象 21 件" 21 "$(jq 'length' <<<"${real_units}")"
-expect_eq "予定表の仕事は 18" 18 "$(jq '[.[] | select(.kind == "plan")] | length' <<<"${real_units}")"
+expect_eq "完了の一覧は 確認対象 25 件" 25 "$(jq 'length' <<<"${real_units}")"
+expect_eq "予定表の仕事は 22" 22 "$(jq '[.[] | select(.kind == "plan")] | length' <<<"${real_units}")"
 expect_eq "予定表に無い 3 本は digest-check・note-check・watchlist-check" \
   "digest-check.yaml note-check.yaml watchlist-check.yaml" \
   "$(jq -r '[.[] | select(.kind == "extra") | .workflow] | sort | join(" ")' <<<"${real_units}")"
 expect_eq "turnover-snapshot は 3 件（共有）" 3 "$(jq '[.[] | select(.workflow == "turnover-snapshot.yaml")] | length' <<<"${real_units}")"
 expect_eq "daily-mediable-sync は 2 件（共有）" 2 "$(jq '[.[] | select(.workflow == "daily-mediable-sync.yaml")] | length' <<<"${real_units}")"
+expect_eq "valuation-snapshot は 2 件（枠 A と B で共有。id は同じで枠で見分ける）" "A B" \
+  "$(jq -r '[.[] | select(.workflow == "valuation-snapshot.yaml") | .slot] | sort | join(" ")' <<<"${real_units}")"
 expect_eq "仕事の ID は省略時にワークフロー名" "nikkei-eps-sync.yaml" \
   "$(jq -r '.[] | select(.workflow == "nikkei-eps-sync.yaml") | .id' <<<"${real_units}")"
-expect_eq "曜日限定の確認対象は 8 つ（火〜土が 5・火が 2・土が 1）" 8 "$(jq '[.[] | select(.days | length > 0)] | length' <<<"${real_units}")"
+expect_eq "曜日限定の確認対象は 8 つ（火〜土が 5・火が 1・火金土が 1・土が 1）" 8 "$(jq '[.[] | select(.days | length > 0)] | length' <<<"${real_units}")"
 
 # ---------------------------------------------------------------------------
 # (b) 試し実行の一覧
@@ -48,7 +50,7 @@ log "(b) 試し実行の一覧"
 bash scripts/cutover-trial.sh >"${tmp}/trial.out"
 trial_part="$(sed -n '/^==> 試し実行/,/^==> 夜間/p' "${tmp}/trial.out")"
 night_part="$(sed -n '/^==> 夜間/,$p' "${tmp}/trial.out")"
-expect_eq "試し実行は 11 本" 11 "$(grep -c '^gh workflow run ' <<<"${trial_part}")"
+expect_eq "試し実行は 14 本" 14 "$(grep -c '^gh workflow run ' <<<"${trial_part}")"
 expect_eq "夜間で確かめるのは 7 本" 7 "$(grep -c '^- ' <<<"${night_part}")"
 expected_trial=(
   "nikkei-eps-sync.yaml -R krtsato/mcp-tradingview -f dry_run=true"
@@ -57,6 +59,9 @@ expected_trial=(
   "short-pressure-sync.yaml -R krtsato/mcp-tradingview -f dry_run=true"
   "short-selling-sync.yaml -R krtsato/mcp-tradingview -f dry_run=true"
   "turnover-snapshot.yaml -R krtsato/mcp-tradingview -f dry_run=true"
+  "daily-series-sync.yaml -R krtsato/mcp-tradingview -f dry_run=true"
+  "investor-type-sync.yaml -R krtsato/mcp-tradingview -f dry_run=true"
+  "valuation-snapshot.yaml -R krtsato/mcp-tradingview -f dry_run=true"
   "watchlist-sync.yaml -R krtsato/mcp-invest-knowledge -f dry_run=true"
   "daily-alpha-picks-sync.yaml -R krtsato/mcp-seeking-alpha -f dry_run=true -f skip_audio=true -f audio_dry_run=true -f sync_limit=1"
   "digest-check.yaml -R krtsato/mcp-invest-knowledge"

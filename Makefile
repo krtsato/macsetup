@@ -69,7 +69,7 @@ secrets-recover:
 
 # 切り替えの道具（どちらも読むだけ。手順は docs/cutover.md）
 # cutover-trial: 試し実行の gh コマンドを出すだけ（起動しない。手元の複製のワークフロー定義を読む）
-# cutover-check: 完了の一覧（確認対象 21 件）が新しい Mac の runner で成功したかを GitHub の run から判定する
+# cutover-check: 完了の一覧（確認対象 25 件）が新しい Mac の runner で成功したかを GitHub の run から判定する
 #   make cutover-check SINCE=<YYYY-MM-DD> RUNNERS=<新しい Mac の runner の名前をカンマ区切り、または名前の末尾>
 cutover-trial:
 	@PATH=$(DOCTOR_PATH) ./scripts/cutover-trial.sh

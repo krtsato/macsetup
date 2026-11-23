@@ -94,8 +94,10 @@ run_doctor "${tmp}/e.out" -e '{"doctor_profile_repos":["mcp-note","doctor-test-n
 expect_broken "unreadable NOTEBOOKLM_PROFILE" "${tmp}/e.out" "${rc}" "doctor-test-nonexistent-repo/NOTEBOOKLM_PROFILE"
 
 # 失敗の節・警告の節だけを取り出す（出力の msg 配列から）
+# macOS の awk（20200816）は UTF-8 の locale で文字列を照合順序で比べ、「失敗」と「警告」を等しいとみなす。
+# LC_ALL=C でバイト単位に比べる（2026-11-23、日曜 12:00 の OpenD の検査が誤って落ちていた）
 section() { # section <出力ファイル> <失敗|警告>
-  awk -v want="$2" '
+  LC_ALL=C awk -v want="$2" '
     /--- 失敗 ---/ { cur = "失敗"; next }
     /--- 警告 ---/ { cur = "警告"; next }
     /^    \]/ { cur = "" }
