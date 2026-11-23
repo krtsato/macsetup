@@ -43,7 +43,7 @@
 | 11 | 新しい Mac の runner を起動し、online・ラベル・PATH・`SessionCreate=false`・`KeepAlive=true` を確認する | 自動 |
 | 12 | 新しい Mac の夜間の起動を起動し、バックグラウンドでの実行を許可し、再起動しても読み込まれることと `make doctor`（`PHASE=ready`。既定）を確かめる | 人＋自動 |
 | 13 | 試し実行（`make cutover-trial` が出す、副作用のないものだけ）を起動する | 自動 |
-| 14 | 完了の一覧（確認対象 21 件）が新しい Mac で成功したら、旧い Mac の runner の登録を GitHub から消す | 人 |
+| 14 | 完了の一覧（確認対象 25 件）が新しい Mac で成功したら、旧い Mac の runner の登録を GitHub から消す | 人 |
 
 ## 準備
 
@@ -377,13 +377,13 @@ gh api repos/krtsato/mcp-tradingview/actions/runs/<run の番号>/jobs --jq '.jo
 
 #### 14-1. 完了の一覧
 
-**確認対象は 21 件**です。夜間の起動の予定表（`krtsato/watcher` の `cmd/nightly-launcher/plan.json`）の **18 の仕事**と、
+**確認対象は 25 件**です。夜間の起動の予定表（`krtsato/watcher` の `cmd/nightly-launcher/plan.json`）の **22 の仕事**と、
 予定表に無い自前実行のワークフロー **3 本**（`digest-check`・`note-check`・`watchlist-check`）を合わせたものです。
 一覧は実行時に予定表と各ワークフローから作ります（書き写しません）。
 
 各確認対象が、**新しい Mac の runner で 1 回成功**したら完了です
 （**全ページの job** の `runner_name` が新しい Mac の runner であることまで見ます。`runner_name` が空の job・旧い Mac の job が 1 つでもあれば数えません）。
-曜日限定の仕事は、その曜日（日本時間）に走るまで未完了のままです（火曜 2 本・土曜 1 本・火〜土 5 本）。
+曜日限定の仕事は、その曜日（日本時間）に走るまで未完了のままです（火曜 1 本・火金土 1 本・土曜 1 本・火〜土 5 本）。
 通常 **1 週間**かかります。
 
 #### 14-2. 判定の命令
@@ -403,7 +403,7 @@ make cutover-check SINCE=<YYYY-MM-DD> RUNNERS=<新しい Mac の runner の名�
 make cutover-check SINCE=2026-10-15 RUNNERS=newmac
 ```
 
-成功の見え方: 出力は確認対象ごとの表（状態・確認対象・run の URL または理由）と、最後の集計 `done N / pending M / 合計 21` です。
+成功の見え方: 出力は確認対象ごとの表（状態・確認対象・run の URL または理由）と、最後の集計 `done N / pending M / 合計 25` です。
 全部 `done` になって 0 で終わります。
 
 失敗したら: **pending が 1 つでもあれば 0 以外で終わります**（make 経由では 2）。全部 `done` になるまで、毎日 1 回など繰り返します。
@@ -504,7 +504,7 @@ done
 | 入力が無く、**全 job の権限が明示的に読み取りだけ** | 入力なし | 検査だけのワークフロー（`digest-check`・`note-check`・`watchlist-check`）。**`permissions` を省略したものは対象外**（省略すると既定の権限になり、書き込めることがある） |
 | 夜間で確かめる | — | 下の表 |
 
-今の内訳は**試し実行 11 本・夜間で確かめる 7 本**です（`make cutover-trial` の出力が正本）。
+今の内訳は**試し実行 14 本・夜間で確かめる 7 本**です（`make cutover-trial` の出力が正本）。
 
 夜間で確かめるもの（`make cutover-trial` の出力が正本です）:
 
@@ -531,5 +531,5 @@ done
 
 - 複製の場所は既定で `~/dev/me`（`REPOS_ROOT` で変えられる）。必要な複製は runner を置く 5 本と `watcher`。予定表は watcher の origin/main の `cmd/nightly-launcher/plan.json`
 - 完了の一覧を**書き写さない**のは、予定表やワークフローを変えたとき黙ってずれるため。代わりに `scripts/test-cutover.sh` が
-  「確認対象 21 件・試し実行 11 本・夜間で確かめる 7 本」を固定して、定義が動いたことに気づけるようにしています
+  「確認対象 25 件・試し実行 14 本・夜間で確かめる 7 本」を固定して、定義が動いたことに気づけるようにしています
   （定義を意図して変えたときは、そのテストの期待を直します）
