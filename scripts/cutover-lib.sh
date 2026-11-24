@@ -41,12 +41,14 @@ cutover_init() {
     || { cutover_die "watcher の予定表が読めません（slots が空か JSON が不正）"; return 1; }
 }
 
-# 複製の既定の枝。clone が覚えている origin/HEAD から読み（ネットワーク不要）、無ければ main。
-# mcp-music-knowledge は master が既定（それ以外は main）。
+# 複製の既定の枝。clone が覚えている origin/HEAD から読み、無ければ（init と fetch で作った複製）
+# 遠隔に問い合わせ、それも分からなければ main。mcp-music-knowledge は master が既定（それ以外は main）。
 cutover_branch() { # cutover_branch <dir>
   local ref
   ref="$(git -C "$1" symbolic-ref --quiet --short refs/remotes/origin/HEAD 2>/dev/null || true)"
-  if [ -n "${ref}" ]; then echo "${ref#origin/}"; else echo main; fi
+  if [ -n "${ref}" ]; then echo "${ref#origin/}"; return 0; fi
+  ref="$(git -C "$1" ls-remote --symref origin HEAD 2>/dev/null | awk '$1 == "ref:" && $3 == "HEAD" { sub("refs/heads/", "", $2); print $2; exit }')"
+  echo "${ref:-main}"
 }
 
 # runner を置くリポジトリ名（roles/runners/defaults の runners_list。重複なし）

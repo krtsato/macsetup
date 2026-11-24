@@ -133,14 +133,15 @@ doctor_config_files:
     required: false
     recursive: true
     purpose: "Apple Music の書き込みの記録（プレイリストを作るまで無い）"
-  # 無いと、反映の基準と出現の対応表が消え、次の同期が全曲を「サービスで足された」と読む
+  # 無いと、反映の基準と出現の対応表が消え、同期の対象のリストがすべて「基準が無い」で保留になり
+  # 取り込みからやり直しになる（同期の命令は壊さずに止まる）。同期を使う前は無い
   - path: ".config/mcp-music-knowledge/state"
     kind: "dir"
     class: "state"
     mode: "0700"
-    required: true
+    required: false
     recursive: true
-    purpose: "プレイリストの同期の状態（反映の基準・出現の対応表・未完了の操作）"
+    purpose: "プレイリストの同期の状態（反映の基準・出現の対応表・未完了の操作。同期を使うまで無い）"
   # 無いと、結果の分からない YouTube のプレイリストの書き込みを確かめられず、同じ操作を二重に送りうる
   - path: ".config/mcp-youtube/playlist-journal"
     kind: "dir"
