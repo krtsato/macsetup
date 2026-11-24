@@ -186,14 +186,14 @@ make setup \
 | 3 | `macos` | `osx_defaults` で macOS 設定適用（ダークモード固定、キーリピート高速(InitialKeyRepeat=13/KeyRepeat=1)、トラックパッド速度最速、Dock アプリ初期化、Finder 表示(隠しファイル/拡張子/ステータスバー/パスバー)、バッテリー残量表示、スクショ保存設定(名前img/日付なし/~/Desktop/tmp)など） |
 | 4 | `dotfiles` | `./scripts/link-symbolic-dotfiles.sh` を非対話実行 |
 | 5 | `github` | gh ログイン確認 → `setup-github-ssh.sh` で鍵登録 |
-| 6 | `repos` | 手元の複製 9 本（runner を置く 5 本・変数が指す 6 本・watcher の和）を無いものだけ SSH（`git@github.com:krtsato/<name>.git`）で複製。場所は GitHub の repo variable `*_CLONE_DIR` を実行時に読む。既存の複製は pull もせず、git でない・origin が違うときは止める |
+| 6 | `repos` | 手元の複製 10 本（runner を置く 6 本・変数が指す 6 本・watcher の和）を無いものだけ SSH（`git@github.com:krtsato/<name>.git`）で複製。場所は GitHub の repo variable `*_CLONE_DIR` を実行時に読む。既存の複製は pull もせず、git でない・origin が違うときは止める |
 | 7 | `mise` | `./scripts/install-mise-tools.sh` |
 | 8 | `uv_tools` | `uv tool install` で版を固定した道具を入れる（NotebookLM の `nlm` 0.9.6。版は `roles/uv_tools/defaults`） |
 | 9 | `go` | Go ツールを `go install`（mise shims を PATH に含めて実行） |
 | 10 | `npm` | npm グローバルパッケージを `npm install -g`（mise shims を PATH に含めて実行）。textlint は Homebrew に formula がないため npm で導入する |
 | 11 | `agent_skills` | 他人が配布する agent skill を `npx skills add <配布元> --skill <名前> -g` で入れる（Herdr の `herdr`）。入っていないものだけ。一覧は `roles/agent_skills/defaults` |
 | 12 | `vscode` | `./scripts/install-vscode-extensions.sh` |
-| 13 | `runners` | 自前の runner（GitHub Actions の self-hosted runner）5 体を登録し、常駐の設定（plist）まで作る。起動は `runners_enabled=true` のときだけ（既定は停止） |
+| 13 | `runners` | 自前の runner（GitHub Actions の self-hosted runner）6 体を登録し、常駐の設定（plist）まで作る。起動は `runners_enabled=true` のときだけ（既定は停止） |
 | 14 | `nightly_launcher` | `krtsato/watcher` を取得し、その `plan.json` の枠ごとに LaunchAgent を生成して登録。読み込むのは `nightly_launcher_enabled=true` か、既に読み込み済みの枠だけ |
 | 15 | `moomoo` | trade-moomoo の定義から OpenD（moomoo の API ゲートウェイ）のログ掃除 LaunchAgent を入れ、SDK のコンテナ image `moomoo-sdk:latest` が無ければ作る（Docker Desktop が動いていなければ知らせて先へ進む） |
 

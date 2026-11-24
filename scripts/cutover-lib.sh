@@ -1,12 +1,12 @@
 #!/usr/bin/env bash
 # 切り替えの 2 つの道具（cutover-trial.sh・cutover-check.sh）が共有する読み取り専用の部品。
-# source して使う。何も書かない。ネットワークは各複製の `git fetch origin main`（読むだけ）だけ。
+# source して使う。何も書かない。ネットワークは各複製の `git fetch origin <既定の枝>`（読むだけ）だけ。既定の枝は cutover_branch が決める（多くは main）。
 #
 # 入力の正本は **GitHub の main**（手元の作業ツリーではない。作業ツリーが別の branch や未 commit でも読み違えない）:
 #   - 夜間の起動の予定表: watcher の複製の origin/main の cmd/nightly-launcher/plan.json
 #   - 自前の runner を使うワークフロー: runner を置くリポジトリ（roles/runners/defaults の runners_list）の複製の
 #     origin/main の .github/workflows/*.y*ml のうち、runs-on に self-hosted を含むもの
-# 必要な複製（runner 5 本 + watcher）が無い・git の複製でない・fetch できない・origin/main に
+# 必要な複製（runner 6 本 + watcher）が無い・git の複製でない・fetch できない・origin/main に
 # .github/workflows が無い、のどれでも、名指しで失敗する（黙って飛ばさない）。
 # 一覧はここに書かず、実行時に読む（書くと予定表やワークフローを変えたとき黙ってずれる）。
 #
@@ -30,13 +30,25 @@ cutover_init() {
     dir="${REPOS_ROOT}/${repo}"
     [ -d "${dir}" ] || { cutover_die "複製がありません: ${repo}（${dir}）。make playbook の repos 役割で複製してください"; return 1; }
     git -C "${dir}" rev-parse --git-dir >/dev/null 2>&1 || { cutover_die "git の複製ではありません: ${repo}（${dir}）"; return 1; }
-    git -C "${dir}" fetch --quiet origin main 2>/dev/null || { cutover_die "git fetch origin main に失敗しました: ${repo}"; return 1; }
-    git -C "${dir}" rev-parse --verify --quiet 'origin/main^{commit}' >/dev/null || { cutover_die "origin/main がありません: ${repo}"; return 1; }
+    local branch
+    branch="$(cutover_branch "${dir}")"
+    git -C "${dir}" fetch --quiet origin "${branch}" 2>/dev/null || { cutover_die "git fetch origin ${branch} に失敗しました: ${repo}"; return 1; }
+    git -C "${dir}" rev-parse --verify --quiet "origin/${branch}^{commit}" >/dev/null || { cutover_die "origin/${branch} がありません: ${repo}"; return 1; }
   done
   CUTOVER_PLAN_JSON="$(git -C "${REPOS_ROOT}/watcher" show "origin/main:${CUTOVER_PLAN_PATH}" 2>/dev/null)" \
     || { cutover_die "watcher の origin/main に ${CUTOVER_PLAN_PATH} がありません"; return 1; }
   jq -e '.slots | length > 0' <<<"${CUTOVER_PLAN_JSON}" >/dev/null 2>&1 \
     || { cutover_die "watcher の予定表が読めません（slots が空か JSON が不正）"; return 1; }
+}
+
+# 複製の既定の枝。clone が覚えている origin/HEAD から読み、無ければ（init と fetch で作った複製）
+# 遠隔に問い合わせ、それも分からなければ main。mcp-music-knowledge は master が既定（それ以外は main）。
+cutover_branch() { # cutover_branch <dir>
+  local ref
+  ref="$(git -C "$1" symbolic-ref --quiet --short refs/remotes/origin/HEAD 2>/dev/null || true)"
+  if [ -n "${ref}" ]; then echo "${ref#origin/}"; return 0; fi
+  ref="$(git -C "$1" ls-remote --symref origin HEAD 2>/dev/null | awk '$1 == "ref:" && $3 == "HEAD" { sub("refs/heads/", "", $2); print $2; exit }')"
+  echo "${ref:-main}"
 }
 
 # runner を置くリポジトリ名（roles/runners/defaults の runners_list。重複なし）
@@ -55,17 +67,18 @@ cutover_workflow_facts() {
   local repo f tmp list="" out
   tmp="$(mktemp -d)"
   for repo in ${RUNNER_REPOS}; do
-    local files
-    files="$(git -C "${REPOS_ROOT}/${repo}" ls-tree --name-only origin/main .github/workflows/ 2>/dev/null | grep -E '\.ya?ml$' || true)"
+    local files branch
+    branch="$(cutover_branch "${REPOS_ROOT}/${repo}")"
+    files="$(git -C "${REPOS_ROOT}/${repo}" ls-tree --name-only "origin/${branch}" .github/workflows/ 2>/dev/null | grep -E '\.ya?ml$' || true)"
     if [ -z "${files}" ]; then
       rm -rf "${tmp}"
-      cutover_die "origin/main に .github/workflows のワークフローがありません: ${repo}"
+      cutover_die "origin/${branch} に .github/workflows のワークフローがありません: ${repo}"
       return 1
     fi
     while IFS= read -r f; do
       mkdir -p "${tmp}/${repo}"
-      git -C "${REPOS_ROOT}/${repo}" show "origin/main:${f}" >"${tmp}/${repo}/$(basename "${f}")" \
-        || { rm -rf "${tmp}"; cutover_die "origin/main から ${repo}/${f} を読めません"; return 1; }
+      git -C "${REPOS_ROOT}/${repo}" show "origin/${branch}:${f}" >"${tmp}/${repo}/$(basename "${f}")" \
+        || { rm -rf "${tmp}"; cutover_die "origin/${branch} から ${repo}/${f} を読めません"; return 1; }
       list="${list}${repo}|${tmp}/${repo}/$(basename "${f}")"$'\n'
     done <<<"${files}"
   done
