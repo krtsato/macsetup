@@ -133,6 +133,22 @@ doctor_config_files:
     required: false
     recursive: true
     purpose: "Apple Music の書き込みの記録（プレイリストを作るまで無い）"
+  # 無いと、反映の基準と出現の対応表が消え、次の同期が全曲を「サービスで足された」と読む
+  - path: ".config/mcp-music-knowledge/state"
+    kind: "dir"
+    class: "state"
+    mode: "0700"
+    required: true
+    recursive: true
+    purpose: "プレイリストの同期の状態（反映の基準・出現の対応表・未完了の操作）"
+  # 無いと、結果の分からない YouTube のプレイリストの書き込みを確かめられず、同じ操作を二重に送りうる
+  - path: ".config/mcp-youtube/playlist-journal"
+    kind: "dir"
+    class: "state"
+    mode: "0700"
+    required: false
+    recursive: true
+    purpose: "YouTube のプレイリストの書き込みの記録（書き込むまで無い）"
   # 受け箱と保留（ディレクトリごと。配下はファイル 0600）
   - path: ".config/mcp-mediable/notebooklm-inbox"
     kind: "dir"
@@ -262,7 +278,7 @@ doctor_profile_repos:
   - mcp-seeking-alpha
   - mcp-mediable
 
-# --- 4. runner（5 体）---------------------------------------------------------------
+# --- 4. runner（6 体）---------------------------------------------------------------
 # dir はホームからの相対の導入先。label は GitHub 上のラベル。
 # 登録する側の一覧は roles/runners/defaults の runners_list（同じ内容。足し引きしたら両方直す）。
 doctor_runners:
@@ -281,6 +297,9 @@ doctor_runners:
   - repo: "mcp-invest-knowledge"
     label: "knowledge-sync"
     dir: "dev/me/mcp-invest-knowledge/actions-runners"
+  - repo: "mcp-music-knowledge"
+    label: "music-knowledge"
+    dir: "dev/me/mcp-music-knowledge/actions-runners"
 
 # runner の .path の先頭に置くべき場所（ホームからの相対）
 doctor_mise_shims: ".local/share/mise/shims"

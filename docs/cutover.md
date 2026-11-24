@@ -12,7 +12,7 @@
 
 | 項目 | 内容 |
 | --- | --- |
-| 引っ越すもの | 自前の runner（GitHub Actions の self-hosted runner）5 体・夜間の起動（nightly launcher の LaunchAgent）2 本（01:30 と 06:30 の枠）・OpenD（moomoo の API ゲートウェイ）・各種ログイン・処理済みの記録 |
+| 引っ越すもの | 自前の runner（GitHub Actions の self-hosted runner）6 体・夜間の起動（nightly launcher の LaunchAgent）2 本（01:30 と 06:30 の枠）・OpenD（moomoo の API ゲートウェイ）・各種ログイン・処理済みの記録 |
 | 前提 | この macsetup が**旧い Mac にも新しい Mac にも**ある（`git pull` 済み） |
 | 所要 | 作業は半日。完了の確認は曜日限定の仕事があるので**通常 1 週間** |
 | 戻せる範囲 | 手順 14（旧い登録の削除）より前なら戻せる。[戻し方](#戻し方)を参照 |
@@ -37,7 +37,7 @@
 | 5 | **夜間の枠の外で**、旧い Mac が空であることを確かめる | 自動 |
 | 6 | 旧い Mac の夜間の起動 2 本を無効にする | 人 |
 | 7 | **無効にした後で改めて**、旧い Mac が空であることを確かめる | 自動 |
-| 8 | 旧い Mac の runner 5 体を止め、GitHub 上で offline を確認する | 人＋自動 |
+| 8 | 旧い Mac の runner 6 体を止め、GitHub 上で offline を確認する | 人＋自動 |
 | 9 | 旧い Mac で `make secrets-export` → 新しい Mac で `make secrets-import` | 人＋自動 |
 | 10 | 新しい Mac で `make doctor PHASE=cutover`。**足りない物だけ**ログインし直す | 人 |
 | 11 | 新しい Mac の runner を起動し、online・ラベル・PATH・`SessionCreate=false`・`KeepAlive=true` を確認する | 自動 |
@@ -187,7 +187,7 @@ plist のファイルは消しません（戻すとき `bootstrap` し直すだ�
 成功の見え方: 実行中・待機中が 0、runner が仕事中でない、再開記録がすべて完了済み、の 3 点が揃います。
 揃うまで先へ進みません。
 
-### 手順 8 — 旧い Mac の runner 5 体を止める
+### 手順 8 — 旧い Mac の runner 6 体を止める
 
 目的: 旧い Mac が GitHub から仕事を取らないようにします。
 
@@ -291,10 +291,10 @@ done
 
 | 確認 | 期待 |
 | --- | --- |
-| 状態 | 新しい Mac の 5 体が `online` |
+| 状態 | 新しい Mac の 6 体が `online` |
 | ラベル | `self-hosted,macOS,ARM64` と用途のラベル |
-| `SessionCreate` | 5 体とも `false`（`true` だと Claude がキーチェーンを読めず、著述系が落ちる） |
-| `KeepAlive` | 5 体とも `true`（無いと、長い通信断の後に runner が 0 で終了したまま戻らない） |
+| `SessionCreate` | 6 体とも `false`（`true` だと Claude がキーチェーンを読めず、著述系が落ちる） |
+| `KeepAlive` | 6 体とも `true`（無いと、長い通信断の後に runner が 0 で終了したまま戻らない） |
 | `.path` | 先頭が mise の shims（`make doctor` が見る） |
 
 ### 手順 12 — 夜間の起動を起動し、稼働の点検を通す
@@ -429,7 +429,7 @@ for r in $REPOS; do
 done
 ```
 
-出た行が**旧い Mac の 5 体**で、すべて `offline` であることを目で確かめてから、1 体ずつ消します。
+出た行が**旧い Mac の 6 体**で、すべて `offline` であることを目で確かめてから、1 体ずつ消します。
 
 ```sh
 gh api -X DELETE "repos/krtsato/<リポジトリ>/actions/runners/<上の表の id>"
@@ -448,7 +448,7 @@ gh api -X DELETE "repos/krtsato/<リポジトリ>/actions/runners/<上の表の 
 | 1 | 新しい Mac | 夜間の起動 2 本を無効にする（手順 6 と同じ `launchctl bootout`） |
 | 2 | 新しい Mac | 手順 5 の 4 つの確認を行う（夜間の起動の process なし・runner が仕事中でない・実行中と待機中が 0・再開記録がすべて完了済み。`.launcher` は新しい Mac の `~/dev/me/watcher` を見る） |
 | 3 | 新しい Mac | **無効にした後で、もう一度**同じ 4 つを確認する（直前の確認と無効化の間に入った仕事を拾うため） |
-| 4 | 新しい Mac | runner 5 体を止め、GitHub 上で offline を確認する（手順 8 と同じ） |
+| 4 | 新しい Mac | runner 6 体を止め、GitHub 上で offline を確認する（手順 8 と同じ） |
 | 5 | 新しい Mac | `make secrets-export OUT=$HOME/Desktop/macsetup-rollback.dmg`（止まっていないと拒否される） |
 | 6 | 旧い Mac | `make secrets-restore IMAGE=/Volumes/USB/macsetup-rollback.dmg`（**旧い Mac の今の状態を `~/.macsetup-restore-backup-<日時>` へ退避してから**、新しい Mac の記録で置き換える） |
 | 7 | 旧い Mac | runner と夜間の起動を再開する（下記）。続けて runner が online・夜間の起動が読み込み済みであることを確かめる |
@@ -529,7 +529,7 @@ done
 | 共有の部品 | `scripts/cutover-lib.sh` | 完了の一覧の導出 |
 | 検査 | `scripts/test-cutover.sh` | 一時の git リポジトリと偽の `gh`・固定の JSON（先頭の確認だけは本物の複製を fetch する） |
 
-- 複製の場所は既定で `~/dev/me`（`REPOS_ROOT` で変えられる）。必要な複製は runner を置く 5 本と `watcher`。予定表は watcher の origin/main の `cmd/nightly-launcher/plan.json`
+- 複製の場所は既定で `~/dev/me`（`REPOS_ROOT` で変えられる）。必要な複製は runner を置く 6 本と `watcher`。予定表は watcher の origin/main の `cmd/nightly-launcher/plan.json`
 - 完了の一覧を**書き写さない**のは、予定表やワークフローを変えたとき黙ってずれるため。代わりに `scripts/test-cutover.sh` が
   「確認対象 25 件・試し実行 14 本・夜間で確かめる 7 本」を固定して、定義が動いたことに気づけるようにしています
   （定義を意図して変えたときは、そのテストの期待を直します）
