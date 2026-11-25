@@ -149,7 +149,7 @@ make playbook EXTRA_VARS='runners_enabled=true nightly_launcher_enabled=true'
 | 項目 | 場所・決まり |
 | --- | --- |
 | 共有の部品 | `scripts/cutover-lib.sh`。完了の一覧 = 夜間の起動の予定表（watcher の `cmd/nightly-launcher/plan.json`）の仕事 ＋ 予定表に無い自前実行のワークフロー。runner を置くリポジトリは `roles/runners/defaults` の `runners_list` から読み、予定表とワークフローは各複製を `git fetch origin main` して **origin/main** から `git show` で読む（作業ツリーは読まない。複製・fetch・workflows の欠けは名指しで失敗。一覧を書き写さない） |
-| `make cutover-trial` | `scripts/cutover-trial.sh`。`dry_run` の入力があれば `dry_run=true`（＋あれば `skip_audio`・`audio_dry_run`・件数=1）、入力が無く全 job の権限が**明示的に**読み取りだけなら入力なし（`permissions` の省略は対象外）。`dry_run` でも副作用が残るもの（`digest-author`・`note-author`・`daily-magazine-sync`・`daily-mediable-sync`・`ledger-sync`）は `cutover_trial_excluded` に理由つきで固定。出すだけ（今は試し実行 14・夜間 7） |
+| `make cutover-trial` | `scripts/cutover-trial.sh`。`dry_run` の入力があれば `dry_run=true`（＋あれば `skip_audio`・`audio_dry_run`・件数=1）、入力が無く全 job の権限が**明示的に**読み取りだけなら入力なし（`permissions` の省略は対象外）。`dry_run` でも副作用が残るもの（`digest-author`・`note-author`・`daily-magazine-sync`・`daily-mediable-sync`・`ledger-sync`）は `cutover_trial_excluded` に理由つきで固定。出すだけ（今は試し実行 18・夜間 7） |
 | `make cutover-check` | `scripts/cutover-check.sh`。各確認対象が SINCE 以降に新しい Mac の runner だけで成功したかを、run と**全ページの job** の `runner_name` で判定（空・旧い Mac の job が 1 つでもあれば数えない）。曜日限定は該当の曜日（日本時間）の run だけ数える。**同じワークフローを共有する確認対象は GitHub から見分けられない**ので、**1 晩**（各枠の `at`〜`deadline` の窓）に確認対象の数ぶんの新しい Mac での成功があり、窓に新しい Mac での成功以外の run（失敗・取り消し・実行中・旧い Mac での成功など）が無いときだけ全確認対象を done にする（別々の晩は足さない。`turnover-snapshot` 3・`daily-mediable-sync` 2・`valuation-snapshot` 2（枠 A と B））。pending があれば 0 以外で終わる |
 | 検査 | `scripts/test-cutover.sh`（確認対象 29 件・試し実行 18 本・夜間 7 本を固定して定義の変化に気づく。判定の論理は偽の `gh`、読み先は一時の git リポジトリ） |
 
