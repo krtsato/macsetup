@@ -191,7 +191,7 @@ Go Binaries をインストール。golangci-lint は mise が版を管理する
 go install github.com/air-verse/air@latest
 go install go.uber.org/mock/mockgen@latest
 go install golang.org/x/tools/gopls@latest
-go install github.com/deepmap/oapi-codegen/v2/cmd/oapi-codegen@latest
+go install github.com/oapi-codegen/oapi-codegen/v2/cmd/oapi-codegen@latest
 ```
 
 npm グローバルパッケージをインストール。

@@ -35,7 +35,7 @@ make secrets-recover   # 強制終了で止まった import・restore の跡を�
 
 # 切り替えの道具（どちらも読むだけ。手順は docs/cutover.md）
 make cutover-trial                                  # 試し実行の gh workflow run を出す（起動はしない）
-make cutover-check SINCE=<YYYY-MM-DD> RUNNERS=<新しい Mac の runner の名前,… または末尾>   # 完了の一覧（確認対象 25 件）の判定
+make cutover-check SINCE=<YYYY-MM-DD> RUNNERS=<新しい Mac の runner の名前,… または末尾>   # 完了の一覧（確認対象 29 件）の判定
 
 # Markdown lint（編集後に必ず）
 npx markdownlint-cli2 --config ~/dev/me/dotfiles/.markdownlint.yaml <file>
@@ -54,14 +54,14 @@ npx markdownlint-cli2 --config ~/dev/me/dotfiles/.markdownlint.yaml <file>
 | 3 | `macos` | `osx_defaults` / NVRAM でシステム設定 |
 | 4 | `dotfiles` | `link-symbolic-dotfiles.sh` でシンボリックリンク作成 |
 | 5 | `github` | `gh auth` 確認 ＋ SSH 鍵の生成・登録 |
-| 6 | `repos` | 夜間の自動実行が前提にする手元の複製 9 本を、無いものだけ複製（場所は GitHub の変数から読む。既存は触らない） |
+| 6 | `repos` | 夜間の自動実行が前提にする手元の複製 10 本を、無いものだけ複製（場所は GitHub の変数から読む。既存は触らない） |
 | 7 | `mise` | `install-mise-tools.sh` で言語ツール |
 | 8 | `uv_tools` | `uv tool install` で版を固定した道具（NotebookLM の `nlm`） |
 | 9 | `go` | `go install` でバイナリ |
 | 10 | `npm` | `npm install -g` でグローバルパッケージ（textlint など） |
 | 11 | `agent_skills` | `npx skills add -g` で他人が配布する agent skill（Herdr の `herdr`）。本体は `~/.agents/skills/` |
 | 12 | `vscode` | `install-vscode-extensions.sh` で拡張機能 |
-| 13 | `runners` | 自前の runner（GitHub Actions の self-hosted runner）5 体を登録し、常駐の設定（plist）まで作る。**起動は `runners_enabled=true` のときだけ**（既定は停止。動いているものは決して止めない） |
+| 13 | `runners` | 自前の runner（GitHub Actions の self-hosted runner）6 体を登録し、常駐の設定（plist）まで作る。**起動は `runners_enabled=true` のときだけ**（既定は停止。動いているものは決して止めない） |
 | 14 | `nightly_launcher` | `krtsato/watcher` を取得し、その `plan.json` の枠ごとに LaunchAgent を生成・登録。**読み込むのは `nightly_launcher_enabled=true` か、既に読み込み済みの枠だけ** |
 | 15 | `moomoo` | OpenD（moomoo の API ゲートウェイ）のログ掃除 LaunchAgent を入れ、SDK のコンテナ image が無ければ作る。OpenD 本体は手で入れる |
 
@@ -149,9 +149,9 @@ make playbook EXTRA_VARS='runners_enabled=true nightly_launcher_enabled=true'
 | 項目 | 場所・決まり |
 | --- | --- |
 | 共有の部品 | `scripts/cutover-lib.sh`。完了の一覧 = 夜間の起動の予定表（watcher の `cmd/nightly-launcher/plan.json`）の仕事 ＋ 予定表に無い自前実行のワークフロー。runner を置くリポジトリは `roles/runners/defaults` の `runners_list` から読み、予定表とワークフローは各複製を `git fetch origin main` して **origin/main** から `git show` で読む（作業ツリーは読まない。複製・fetch・workflows の欠けは名指しで失敗。一覧を書き写さない） |
-| `make cutover-trial` | `scripts/cutover-trial.sh`。`dry_run` の入力があれば `dry_run=true`（＋あれば `skip_audio`・`audio_dry_run`・件数=1）、入力が無く全 job の権限が**明示的に**読み取りだけなら入力なし（`permissions` の省略は対象外）。`dry_run` でも副作用が残るもの（`digest-author`・`note-author`・`daily-magazine-sync`・`daily-mediable-sync`・`ledger-sync`）は `cutover_trial_excluded` に理由つきで固定。出すだけ（今は試し実行 14・夜間 7） |
+| `make cutover-trial` | `scripts/cutover-trial.sh`。`dry_run` の入力があれば `dry_run=true`（＋あれば `skip_audio`・`audio_dry_run`・件数=1）、入力が無く全 job の権限が**明示的に**読み取りだけなら入力なし（`permissions` の省略は対象外）。`dry_run` でも副作用が残るもの（`digest-author`・`note-author`・`daily-magazine-sync`・`daily-mediable-sync`・`ledger-sync`）は `cutover_trial_excluded` に理由つきで固定。出すだけ（今は試し実行 18・夜間 7） |
 | `make cutover-check` | `scripts/cutover-check.sh`。各確認対象が SINCE 以降に新しい Mac の runner だけで成功したかを、run と**全ページの job** の `runner_name` で判定（空・旧い Mac の job が 1 つでもあれば数えない）。曜日限定は該当の曜日（日本時間）の run だけ数える。**同じワークフローを共有する確認対象は GitHub から見分けられない**ので、**1 晩**（各枠の `at`〜`deadline` の窓）に確認対象の数ぶんの新しい Mac での成功があり、窓に新しい Mac での成功以外の run（失敗・取り消し・実行中・旧い Mac での成功など）が無いときだけ全確認対象を done にする（別々の晩は足さない。`turnover-snapshot` 3・`daily-mediable-sync` 2・`valuation-snapshot` 2（枠 A と B））。pending があれば 0 以外で終わる |
-| 検査 | `scripts/test-cutover.sh`（確認対象 25 件・試し実行 14 本・夜間 7 本を固定して定義の変化に気づく。判定の論理は偽の `gh`、読み先は一時の git リポジトリ） |
+| 検査 | `scripts/test-cutover.sh`（確認対象 29 件・試し実行 18 本・夜間 7 本を固定して定義の変化に気づく。判定の論理は偽の `gh`、読み先は一時の git リポジトリ） |
 
 - 完了の判定に**試し実行は入れない**（run に入力は残らず、`dry_run` の成功も数えてしまう）。SINCE は試し実行の翌日にする
 - ワークフローや予定表を意図して変えたら `scripts/test-cutover.sh` の期待を直す
@@ -184,7 +184,7 @@ make playbook EXTRA_VARS='runners_enabled=true nightly_launcher_enabled=true'
 | 項目 | 場所・決まり |
 | --- | --- |
 | 一覧の正本 | `roles/doctor/vars/main.yaml` の `doctor_config_files`（複製しない）。`{profile}` は `NOTEBOOKLM_PROFILE` から実行時に展開し、`secrets.sh` の shell 変数の中だけで持つ（出力は `<プロファイル1>` の別名） |
-| 動作 | `list`（表示のみ）/ `export`（旧い Mac。runner 5 体・夜間の起動 2 枠が読み込まれていたら拒否）/ `import`（衝突は 1 件でもあれば何も変えない。記録をたどって全部か何もなしか）/ `restore`（退避してから置換）/ `recover`（強制終了の跡を戻す） |
+| 動作 | `list`（表示のみ）/ `export`（旧い Mac。runner 6 体・夜間の起動 2 枠が読み込まれていたら拒否）/ `import`（衝突は 1 件でもあれば何も変えない。記録をたどって全部か何もなしか）/ `restore`（退避してから置換）/ `recover`（強制終了の跡を戻す） |
 | 復旧 | 変更の前に意図を journal へ書く（書き込み先行）。復旧は実際の状態で各行を判断し冪等。跡（`.macsetup-import.*`）が残る間は import・restore を拒否して `make secrets-recover` を案内 |
 | 停止の確認 | 読み込み済みの label・`.runner` が有るのに `.service` が無い・`bin*/Runner.Listener` が動いている、のどれでも拒否（確かめられなければ止まっているとみなさない） |
 | 出力 | 全出力を別名への置き換えフィルタ経由にする（長い名前から）。道具のエラーのパスにも本物の名前を出さない |

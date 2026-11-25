@@ -143,7 +143,7 @@ make doctor PHASE=pre-import
 | `make secrets-restore` | 今ある物を退避して、イメージの中身で置き換える | `make secrets-restore IMAGE=/Volumes/USB/macsetup-secrets.dmg` |
 | `make secrets-recover` | 強制終了で止まった import・restore の跡を配置前へ戻す（冪等） | `make secrets-recover` |
 | `make cutover-trial` | 切り替えの試し実行の `gh workflow run` を出す（出すだけ・読むだけ） | `make cutover-trial` |
-| `make cutover-check` | 完了の一覧（確認対象 25 件）が新しい Mac の runner で成功したか判定（読むだけ。pending があれば 0 以外で終わる） | `make cutover-check SINCE=2026-10-15 RUNNERS=<Mac の名前>` |
+| `make cutover-check` | 完了の一覧（確認対象 29 件）が新しい Mac の runner で成功したか判定（読むだけ。pending があれば 0 以外で終わる） | `make cutover-check SINCE=2026-10-15 RUNNERS=<Mac の名前>` |
 | `make help` | 簡易ヘルプ表示 | - |
 
 ### 主要な変数
@@ -152,8 +152,8 @@ make doctor PHASE=pre-import
 | --- | --- | --- | --- |
 | `ANSIBLE_FLAGS` / `EXTRA_VARS` | `ansible-playbook` の追加オプション | `EXTRA_VARS="sudo_pass=..."` など | 任意 |
 | `sudo_pass` | Homebrew/macOS ロールで sudo を非対話実行するためのパスワード | （空、非対話で実行したい場合は指定する） | 任意 |
-| `SSH_KEY_TYPE` | GitHub 鍵タイプ（`make playbook` 時の `github_ssh_key_type` に対応） | `ed25519` | 任意 |
-| `GITHUB_EMAIL` | GitHub 鍵コメント用メール（`make playbook` 時の `github_ssh_email` に対応） | 空（省略可） | 任意 |
+| `SSH_KEY_TYPE` | GitHub 鍵タイプ。**`make github-ssh` だけが読む**（`make setup`・`make playbook` では無視される。playbook では `EXTRA_VARS="github_ssh_key_type=..."`） | `ed25519` | 任意 |
+| `GITHUB_EMAIL` | GitHub 鍵コメント用メール。**`make github-ssh` だけが読む**（playbook では `EXTRA_VARS="github_ssh_email=..."`） | 空（省略可） | 任意 |
 
 ### EXTRA_VARS の指定例
 
@@ -295,6 +295,6 @@ CLI では変更できない、または sudo 権限が必要な項目は GUI（
 | `scripts/test-repos.sh` | 手元の複製の取得（無いものだけ複製・既存に触らない・git でない/origin が違うとき止まる） |
 | `scripts/test-runners.sh` | runner の登録（偽の `gh`・`launchctl`・`config.sh` を使う） |
 | `scripts/test-nightly-launcher.sh` | 夜間の起動の読み込み規則 |
-| `scripts/test-cutover.sh` | 切り替えの道具（確認対象 25 件・試し実行 14 本・夜間で確かめる 7 本を固定） |
+| `scripts/test-cutover.sh` | 切り替えの道具（確認対象 29 件・試し実行 18 本・夜間で確かめる 7 本を固定） |
 | `scripts/test-secrets.sh` | 秘密と記録の持ち出し・持ち込み（偽のホーム） |
 | `scripts/test-doctor.sh` | 点検（壊して確かめる。遅い） |
