@@ -93,5 +93,5 @@ help:
 	@echo "secrets-restore  IMAGE=<abs path.dmg>  Back up what exists, then replace with the image"
 	@echo "secrets-recover  Undo a half-finished import/restore left by a crash (idempotent)"
 	@echo "cutover-trial  Print the dry-run gh commands for the cutover trial (read-only)"
-	@echo "cutover-check  SINCE=<YYYY-MM-DD> RUNNERS=<names or suffix>  Judge whether the 21 jobs to confirm succeeded on the new Mac runners (read-only)"
+	@echo "cutover-check  SINCE=<YYYY-MM-DD> RUNNERS=<names or suffix>  Judge whether the 29 units to confirm succeeded on the new Mac runners (read-only)"
 	@echo "github-ssh  Run setup-github-ssh.sh (override with SSH_KEY_TYPE/GITHUB_EMAIL)"
